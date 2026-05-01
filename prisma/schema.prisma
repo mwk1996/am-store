@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String       @id @default(cuid())
+  name        Json         // { en, ar, tr, ku }
+  description Json         // { en, ar, tr, ku }
+  price       Decimal      @db.Decimal(10, 2)
+  imageUrl    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  licenseKeys LicenseKey[]
+  orders      Order[]
+}
+
+model LicenseKey {
+  id         String    @id @default(cuid())
+  key        String    @unique
+  productId  String
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId    String?   @unique
+  order      Order?    @relation(fields: [orderId], references: [id])
+  assignedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  guestEmail   String
+  productId    String
+  product      Product     @relation(fields: [productId], references: [id])
+  licenseKeyId String?     @unique
+  licenseKey   LicenseKey?
+  status       OrderStatus @default(pending)
+  gatewayRef   String?
+  locale       String      @default("en")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum OrderStatus {
+  pending
+  paid
+  failed
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // bcrypt hashed
+  createdAt DateTime @default(now())
+}

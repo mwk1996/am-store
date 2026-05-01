@@ -1,0 +1,120 @@
+{
+  "nav": {
+    "store": "Store",
+    "admin": "Admin",
+    "language": "Language"
+  },
+  "store": {
+    "title": "Software License Store",
+    "subtitle": "Premium software licenses at great prices",
+    "buyNow": "Buy Now",
+    "price": "Price",
+    "noProducts": "No products available at this time.",
+    "currency": "IQD"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "email": "Email Address",
+    "emailPlaceholder": "your@email.com",
+    "emailHint": "Your license key will be sent to this email",
+    "product": "Product",
+    "selectProduct": "Select a product",
+    "price": "Price",
+    "total": "Total",
+    "pay": "Pay Now",
+    "paying": "Processing...",
+    "orderSummary": "Order Summary",
+    "contactInfo": "Contact Information",
+    "securePayment": "Secure Payment",
+    "poweredBy": "Powered by Iraqi Payment Gateway"
+  },
+  "success": {
+    "title": "Payment Successful!",
+    "subtitle": "Thank you for your purchase",
+    "orderDetails": "Order Details",
+    "orderId": "Order ID",
+    "product": "Product",
+    "email": "Email",
+    "licenseKey": "Your License Key",
+    "copyKey": "Copy Key",
+    "copied": "Copied!",
+    "emailSent": "A copy has been sent to your email address.",
+    "keepSafe": "Please keep this key safe. It cannot be recovered if lost.",
+    "continueShopping": "Continue Shopping",
+    "loading": "Loading your order..."
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "navProducts": "Products",
+    "navOrders": "Orders",
+    "navLicenses": "License Keys",
+    "signOut": "Sign Out",
+    "stats": {
+      "totalOrders": "Total Orders",
+      "totalRevenue": "Total Revenue",
+      "availableKeys": "Available Keys",
+      "paidOrders": "Paid Orders"
+    },
+    "products": {
+      "title": "Products",
+      "addProduct": "Add Product",
+      "editProduct": "Edit Product",
+      "name": "Name",
+      "price": "Price",
+      "description": "Description",
+      "imageUrl": "Image URL",
+      "save": "Save",
+      "saving": "Saving...",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure you want to delete this product?",
+      "noProducts": "No products yet. Create your first product.",
+      "licenseCount": "License Keys",
+      "available": "Available",
+      "actions": "Actions"
+    },
+    "orders": {
+      "title": "Orders",
+      "orderId": "Order ID",
+      "email": "Email",
+      "product": "Product",
+      "status": "Status",
+      "date": "Date",
+      "noOrders": "No orders yet.",
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed"
+    },
+    "licenses": {
+      "title": "License Keys",
+      "importKeys": "Import Keys",
+      "selectProduct": "Select Product",
+      "pasteKeys": "Paste License Keys",
+      "pasteKeysHint": "One key per line",
+      "import": "Import",
+      "importing": "Importing...",
+      "key": "Key",
+      "product": "Product",
+      "status": "Status",
+      "assignedAt": "Assigned At",
+      "available": "Available",
+      "assigned": "Assigned",
+      "noKeys": "No license keys yet.",
+      "importSuccess": "keys imported successfully",
+      "filterByProduct": "Filter by product",
+      "all": "All Products"
+    },
+    "login": {
+      "title": "Admin Login",
+      "email": "Email",
+      "password": "Password",
+      "signIn": "Sign In",
+      "signingIn": "Signing in...",
+      "error": "Invalid email or password"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "orderNotFound": "Order not found.",
+    "paymentFailed": "Payment failed. Please try again."
+  }
+}

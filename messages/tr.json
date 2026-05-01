@@ -1,0 +1,120 @@
+{
+  "nav": {
+    "store": "Mağaza",
+    "admin": "Yönetim",
+    "language": "Dil"
+  },
+  "store": {
+    "title": "Yazılım Lisans Mağazası",
+    "subtitle": "Harika fiyatlarla premium yazılım lisansları",
+    "buyNow": "Şimdi Satın Al",
+    "price": "Fiyat",
+    "noProducts": "Şu anda mevcut ürün yok.",
+    "currency": "IQD"
+  },
+  "checkout": {
+    "title": "Ödeme",
+    "email": "E-posta Adresi",
+    "emailPlaceholder": "your@email.com",
+    "emailHint": "Lisans anahtarınız bu e-postaya gönderilecektir",
+    "product": "Ürün",
+    "selectProduct": "Ürün seçin",
+    "price": "Fiyat",
+    "total": "Toplam",
+    "pay": "Şimdi Öde",
+    "paying": "İşleniyor...",
+    "orderSummary": "Sipariş Özeti",
+    "contactInfo": "İletişim Bilgileri",
+    "securePayment": "Güvenli Ödeme",
+    "poweredBy": "Irak Ödeme Sistemi tarafından desteklenmektedir"
+  },
+  "success": {
+    "title": "Ödeme Başarılı!",
+    "subtitle": "Satın alımınız için teşekkürler",
+    "orderDetails": "Sipariş Detayları",
+    "orderId": "Sipariş No",
+    "product": "Ürün",
+    "email": "E-posta",
+    "licenseKey": "Lisans Anahtarınız",
+    "copyKey": "Anahtarı Kopyala",
+    "copied": "Kopyalandı!",
+    "emailSent": "Bir kopya e-posta adresinize gönderildi.",
+    "keepSafe": "Bu anahtarı güvende tutun. Kaybolursa kurtarılamaz.",
+    "continueShopping": "Alışverişe Devam Et",
+    "loading": "Siparişiniz yükleniyor..."
+  },
+  "admin": {
+    "dashboard": "Kontrol Paneli",
+    "navProducts": "Ürünler",
+    "navOrders": "Siparişler",
+    "navLicenses": "Lisans Anahtarları",
+    "signOut": "Çıkış Yap",
+    "stats": {
+      "totalOrders": "Toplam Sipariş",
+      "totalRevenue": "Toplam Gelir",
+      "availableKeys": "Mevcut Anahtarlar",
+      "paidOrders": "Ödenen Siparişler"
+    },
+    "products": {
+      "title": "Ürünler",
+      "addProduct": "Ürün Ekle",
+      "editProduct": "Ürünü Düzenle",
+      "name": "Ad",
+      "price": "Fiyat",
+      "description": "Açıklama",
+      "imageUrl": "Resim URL'si",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor...",
+      "delete": "Sil",
+      "confirmDelete": "Bu ürünü silmek istediğinizden emin misiniz?",
+      "noProducts": "Henüz ürün yok. İlk ürününüzü oluşturun.",
+      "licenseCount": "Lisans Anahtarları",
+      "available": "Mevcut",
+      "actions": "İşlemler"
+    },
+    "orders": {
+      "title": "Siparişler",
+      "orderId": "Sipariş No",
+      "email": "E-posta",
+      "product": "Ürün",
+      "status": "Durum",
+      "date": "Tarih",
+      "noOrders": "Henüz sipariş yok.",
+      "pending": "Beklemede",
+      "paid": "Ödendi",
+      "failed": "Başarısız"
+    },
+    "licenses": {
+      "title": "Lisans Anahtarları",
+      "importKeys": "Anahtar İçe Aktar",
+      "selectProduct": "Ürün Seç",
+      "pasteKeys": "Lisans Anahtarlarını Yapıştır",
+      "pasteKeysHint": "Satır başına bir anahtar",
+      "import": "İçe Aktar",
+      "importing": "İçe Aktarılıyor...",
+      "key": "Anahtar",
+      "product": "Ürün",
+      "status": "Durum",
+      "assignedAt": "Atanma Tarihi",
+      "available": "Mevcut",
+      "assigned": "Atandı",
+      "noKeys": "Henüz lisans anahtarı yok.",
+      "importSuccess": "anahtar başarıyla içe aktarıldı",
+      "filterByProduct": "Ürüne göre filtrele",
+      "all": "Tüm Ürünler"
+    },
+    "login": {
+      "title": "Yönetici Girişi",
+      "email": "E-posta",
+      "password": "Şifre",
+      "signIn": "Giriş Yap",
+      "signingIn": "Giriş yapılıyor...",
+      "error": "Geçersiz e-posta veya şifre"
+    }
+  },
+  "errors": {
+    "generic": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+    "orderNotFound": "Sipariş bulunamadı.",
+    "paymentFailed": "Ödeme başarısız. Lütfen tekrar deneyin."
+  }
+}
