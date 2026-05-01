@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Package, ShoppingCart, Key, LogOut, ShoppingBag } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Key, LogOut, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 
 interface AdminSidebarProps {
@@ -24,12 +23,15 @@ export function AdminSidebar({ locale }: AdminSidebarProps) {
   ];
 
   return (
-    <aside className="flex w-64 flex-col border-e bg-card">
-      <div className="flex h-16 items-center gap-2 border-b px-6">
-        <ShoppingBag className="h-6 w-6 text-primary" />
-        <span className="font-bold">Admin Panel</span>
+    <aside className="flex w-60 flex-col border-e border-border/60 bg-card">
+      <div className="flex h-16 items-center gap-2.5 border-b border-border/60 px-5">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/30">
+          <Zap className="h-3.5 w-3.5 text-primary" />
+        </div>
+        <span className="gradient-text font-bold text-sm">Admin Panel</span>
       </div>
-      <nav className="flex flex-1 flex-col gap-1 p-3">
+
+      <nav className="flex flex-1 flex-col gap-0.5 p-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -38,27 +40,27 @@ export function AdminSidebar({ locale }: AdminSidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 cursor-pointer",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-primary/10 text-primary ring-1 ring-primary/20"
+                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
               )}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 shrink-0" />
               {item.label}
             </Link>
           );
         })}
       </nav>
-      <div className="border-t p-3">
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-3 text-muted-foreground"
+
+      <div className="border-t border-border/60 p-3">
+        <button
           onClick={() => signOut({ callbackUrl: `/${locale}/admin/login` })}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive cursor-pointer"
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-4 w-4 shrink-0" />
           {t("signOut")}
-        </Button>
+        </button>
       </div>
     </aside>
   );

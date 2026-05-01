@@ -1,3 +1,4 @@
+// Run: npx prisma migrate dev --name add-product-category
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -16,6 +17,8 @@ model Product {
   description Json         // { en, ar, tr, ku }
   price       Decimal      @db.Decimal(10, 2)
   imageUrl    String?
+  category    String?      @default("General")
+  sortOrder   Int          @default(0)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   licenseKeys LicenseKey[]

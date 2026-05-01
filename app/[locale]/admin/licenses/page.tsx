@@ -3,12 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
 
 interface LicenseKey {
@@ -87,103 +83,104 @@ export default function LicensesPage() {
       <h1 className="text-2xl font-bold">{t("title")}</h1>
 
       {/* Import Panel */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t("importKeys")}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label>{t("selectProduct")}</Label>
-              <Select value={importProductId} onValueChange={setImportProductId}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("selectProduct")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name.en}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label>{t("pasteKeys")}</Label>
-              <textarea
-                className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder={t("pasteKeysHint")}
-                value={keysText}
-                onChange={(e) => setKeysText(e.target.value)}
-              />
-            </div>
-          </div>
-          <Button onClick={handleImport} disabled={importing || !importProductId || !keysText.trim()} className="gap-2">
-            <Upload className="h-4 w-4" />
-            {importing ? t("importing") : t("import")}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Keys List */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">{t("title")}</CardTitle>
-          <div className="w-48">
-            <Select value={filterProductId} onValueChange={setFilterProductId}>
-              <SelectTrigger>
-                <SelectValue />
+      <div className="rounded-xl border border-border/60 bg-card p-5">
+        <h2 className="mb-4 font-semibold">{t("importKeys")}</h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label>{t("selectProduct")}</Label>
+            <Select value={importProductId} onValueChange={setImportProductId}>
+              <SelectTrigger className="border-border/60 bg-secondary/50">
+                <SelectValue placeholder={t("selectProduct")} />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("all")}</SelectItem>
+              <SelectContent className="border-border/60 bg-card">
                 {products.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name.en}
-                  </SelectItem>
+                  <SelectItem key={p.id} value={p.id}>{p.name.en}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex h-32 items-center justify-center">
-              <div className="h-6 w-6 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
-          ) : filteredKeys.length === 0 ? (
-            <div className="flex h-32 items-center justify-center">
-              <p className="text-muted-foreground">{t("noKeys")}</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("key")}</TableHead>
-                  <TableHead>{t("product")}</TableHead>
-                  <TableHead>{t("status")}</TableHead>
-                  <TableHead>{t("assignedAt")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredKeys.map((k) => (
-                  <TableRow key={k.id}>
-                    <TableCell className="font-mono text-xs">{k.key}</TableCell>
-                    <TableCell>{k.product.name.en}</TableCell>
-                    <TableCell>
-                      <Badge variant={k.assignedAt ? "secondary" : "success"}>
-                        {k.assignedAt ? t("assigned") : t("available")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {k.assignedAt ? new Date(k.assignedAt).toLocaleDateString() : "—"}
-                    </TableCell>
-                  </TableRow>
+          <div className="space-y-2">
+            <Label>{t("pasteKeys")}</Label>
+            <textarea
+              className="flex min-h-[100px] w-full rounded-lg border border-border/60 bg-secondary/50 px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/60"
+              placeholder={t("pasteKeysHint")}
+              value={keysText}
+              onChange={(e) => setKeysText(e.target.value)}
+            />
+          </div>
+        </div>
+        <button
+          onClick={handleImport}
+          disabled={importing || !importProductId || !keysText.trim()}
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          <Upload className="h-4 w-4" />
+          {importing ? t("importing") : t("import")}
+        </button>
+      </div>
+
+      {/* Keys List */}
+      <div className="rounded-xl border border-border/60 bg-card">
+        <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
+          <h2 className="font-semibold">{t("title")}</h2>
+          <div className="w-44">
+            <Select value={filterProductId} onValueChange={setFilterProductId}>
+              <SelectTrigger className="border-border/60 bg-secondary/50 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border-border/60 bg-card">
+                <SelectItem value="all">{t("all")}</SelectItem>
+                {products.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name.en}</SelectItem>
                 ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex h-32 items-center justify-center">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : filteredKeys.length === 0 ? (
+          <div className="flex h-32 items-center justify-center">
+            <p className="text-sm text-muted-foreground">{t("noKeys")}</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/60">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">{t("key")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">{t("product")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">{t("status")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">{t("assignedAt")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredKeys.map((k, i) => (
+                  <tr key={k.id} className={`transition-colors hover:bg-secondary/30 ${i !== filteredKeys.length - 1 ? "border-b border-border/40" : ""}`}>
+                    <td className="px-4 py-3 font-mono text-xs">{k.key}</td>
+                    <td className="px-4 py-3">{k.product.name.en}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        k.assignedAt
+                          ? "bg-secondary text-muted-foreground ring-1 ring-border"
+                          : "bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/20"
+                      }`}>
+                        {k.assignedAt ? t("assigned") : t("available")}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {k.assignedAt ? new Date(k.assignedAt).toLocaleDateString() : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

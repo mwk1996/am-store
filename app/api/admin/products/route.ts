@@ -15,6 +15,7 @@ const productSchema = z.object({
   description: z.object({ en: z.string(), ar: z.string(), tr: z.string(), ku: z.string() }),
   price: z.number().positive(),
   imageUrl: z.string().url().optional().or(z.literal("").transform(() => undefined)),
+  category: z.string().optional().default("General"),
 });
 
 export async function GET() {
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
         description: data.description,
         price: data.price,
         imageUrl: data.imageUrl ?? null,
+        category: data.category,
       },
     });
 

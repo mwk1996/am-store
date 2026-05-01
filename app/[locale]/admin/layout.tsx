@@ -18,10 +18,10 @@ export default async function AdminLayout({ children, params: { locale } }: Admi
 
   return (
     <SessionProvider session={session}>
-      <div className="flex min-h-screen bg-muted/20">
+      <div className="flex min-h-screen bg-background bg-grid">
         <AdminSidebar locale={locale} />
         <main className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">{children}</div>
+          <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
         </main>
       </div>
     </SessionProvider>

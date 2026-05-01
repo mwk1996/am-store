@@ -15,6 +15,7 @@ const updateSchema = z.object({
   description: z.object({ en: z.string(), ar: z.string(), tr: z.string(), ku: z.string() }).optional(),
   price: z.number().positive().optional(),
   imageUrl: z.string().url().optional().nullable(),
+  category: z.string().optional().nullable(),
 });
 
 export async function PUT(
@@ -35,6 +36,7 @@ export async function PUT(
         ...(data.description && { description: data.description }),
         ...(data.price !== undefined && { price: data.price }),
         ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
+        ...(data.category !== undefined && { category: data.category }),
       },
     });
 

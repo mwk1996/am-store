@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, DollarSign, Key, TrendingUp } from "lucide-react";
 
 export default async function DashboardPage() {
@@ -27,29 +26,37 @@ export default async function DashboardPage() {
       label: t("stats.totalOrders"),
       value: totalOrders,
       icon: ShoppingCart,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-blue-400",
+      bg: "bg-blue-400/10",
+      ring: "ring-blue-400/20",
+      glow: "shadow-blue-500/10",
     },
     {
       label: t("stats.paidOrders"),
       value: paidOrders,
       icon: TrendingUp,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
+      color: "text-emerald-400",
+      bg: "bg-emerald-400/10",
+      ring: "ring-emerald-400/20",
+      glow: "shadow-emerald-500/10",
     },
     {
       label: t("stats.totalRevenue"),
       value: `${totalRevenue.toLocaleString()} IQD`,
       icon: DollarSign,
-      color: "text-violet-600",
-      bg: "bg-violet-50",
+      color: "text-violet-400",
+      bg: "bg-violet-400/10",
+      ring: "ring-violet-400/20",
+      glow: "shadow-violet-500/10",
     },
     {
       label: t("stats.availableKeys"),
       value: availableKeys,
       icon: Key,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
+      color: "text-amber-400",
+      bg: "bg-amber-400/10",
+      ring: "ring-amber-400/20",
+      glow: "shadow-amber-500/10",
     },
   ];
 
@@ -69,66 +76,63 @@ export default async function DashboardPage() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.label}
-                </CardTitle>
-                <div className={`rounded-full p-2 ${stat.bg}`}>
+            <div
+              key={stat.label}
+              className={`rounded-xl border border-border/60 bg-card p-5 shadow-lg ${stat.glow}`}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <div className={`rounded-lg p-2 ${stat.bg} ring-1 ${stat.ring}`}>
                   <Icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{stat.value}</p>
-              </CardContent>
-            </Card>
+              </div>
+              <p className="mt-3 text-2xl font-bold">{stat.value}</p>
+            </div>
           );
         })}
       </div>
 
-      <div className="mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{tOrders("title")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentOrders.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{tOrders("noOrders")}</p>
-            ) : (
-              <div className="space-y-3">
-                {recentOrders.map((order) => (
-                  <div
-                    key={order.id}
-                    className="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"
-                  >
-                    <div>
-                      <p className="font-medium">{order.guestEmail}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {(order.product.name as Record<string, string>)["en"] ?? "Product"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          order.status === "paid"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : order.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {order.status}
-                      </span>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
+      <div className="mt-6 rounded-xl border border-border/60 bg-card">
+        <div className="border-b border-border/60 px-5 py-4">
+          <h2 className="font-semibold">{tOrders("title")}</h2>
+        </div>
+        <div className="p-2">
+          {recentOrders.length === 0 ? (
+            <p className="px-3 py-8 text-center text-sm text-muted-foreground">{tOrders("noOrders")}</p>
+          ) : (
+            <div className="space-y-1">
+              {recentOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between rounded-lg px-4 py-3 text-sm transition-colors hover:bg-secondary/40"
+                >
+                  <div>
+                    <p className="font-medium">{order.guestEmail}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(order.product.name as Record<string, string>)["en"] ?? "Product"}
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <div className="text-right">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        order.status === "paid"
+                          ? "bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/20"
+                          : order.status === "pending"
+                          ? "bg-amber-400/10 text-amber-400 ring-1 ring-amber-400/20"
+                          : "bg-red-400/10 text-red-400 ring-1 ring-red-400/20"
+                      }`}
+                    >
+                      {order.status}
+                    </span>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

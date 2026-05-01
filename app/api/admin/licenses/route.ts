@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Deduplicate and skip existing keys
-    const uniqueKeys = [...new Set(keys)];
+    const uniqueKeys = Array.from(new Set<string>(keys));
     const existing = await prisma.licenseKey.findMany({
       where: { key: { in: uniqueKeys } },
       select: { key: true },

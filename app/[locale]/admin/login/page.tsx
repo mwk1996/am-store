@@ -4,11 +4,9 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ShoppingBag } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Zap, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface LoginPageProps {
   params: { locale: string };
@@ -27,11 +25,7 @@ export default function AdminLoginPage({ params: { locale } }: LoginPageProps) {
     setLoading(true);
     setError("");
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    const result = await signIn("credentials", { email, password, redirect: false });
 
     if (result?.error) {
       setError(t("error"));
@@ -42,18 +36,19 @@ export default function AdminLoginPage({ params: { locale } }: LoginPageProps) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-            <ShoppingBag className="h-6 w-6 text-primary-foreground" />
+    <div className="flex min-h-screen items-center justify-center bg-background bg-grid px-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/30">
+            <Zap className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle>{t("title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
+        </div>
+
+        <div className="rounded-xl border border-border/60 bg-card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -66,6 +61,7 @@ export default function AdminLoginPage({ params: { locale } }: LoginPageProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
+                className="border-border/60 bg-secondary/50 focus:border-primary/60"
               />
             </div>
             <div className="space-y-2">
@@ -77,14 +73,20 @@ export default function AdminLoginPage({ params: { locale } }: LoginPageProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                className="border-border/60 bg-secondary/50 focus:border-primary/60"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-all duration-200 hover:bg-primary/90 disabled:opacity-50 cursor-pointer"
+            >
+              <Lock className="h-4 w-4" />
               {loading ? t("signingIn") : t("signIn")}
-            </Button>
+            </button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
