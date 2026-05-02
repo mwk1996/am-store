@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
+import { requireAdminSession, jsonError, jsonOk } from "@/lib/auth-middleware";
 import { prisma } from "@/lib/prisma";
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session) return null;
-  return session;
-}
+export const dynamic = "force-dynamic";
 
 const importSchema = z.object({
   productId: z.string().min(1),
   keys: z.array(z.string().min(1)).min(1),
 });
 
-export async function GET(req: NextRequest) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-
+export const GET = requireAdminSession(async (req, _user) => {
   const productId = req.nextUrl.searchParams.get("productId");
 
   const keys = await prisma.licenseKey.findMany({
@@ -31,12 +23,9 @@ export async function GET(req: NextRequest) {
   });
 
   return NextResponse.json(keys);
-}
+});
 
-export async function POST(req: NextRequest) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-
+export const POST = requireAdminSession(async (req, _user) => {
   try {
     const body = await req.json();
     const { productId, keys } = importSchema.parse(body);
@@ -72,4 +61,4 @@ export async function POST(req: NextRequest) {
     console.error("POST /api/admin/licenses:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
-}
+});

@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
+import { requireAdminSession, jsonError, jsonOk } from "@/lib/auth-middleware";
 import { prisma } from "@/lib/prisma";
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session) return null;
-  return session;
-}
+export const dynamic = "force-dynamic";
 
 const productSchema = z.object({
   name: z.object({ en: z.string(), ar: z.string(), tr: z.string(), ku: z.string() }),
@@ -18,10 +13,7 @@ const productSchema = z.object({
   category: z.string().optional().default("General"),
 });
 
-export async function GET() {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-
+export const GET = requireAdminSession(async (_req, _user) => {
   const products = await prisma.product.findMany({
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { licenseKeys: true } } },
@@ -30,12 +22,9 @@ export async function GET() {
   return NextResponse.json(
     products.map((p) => ({ ...p, price: p.price.toString() }))
   );
-}
+});
 
-export async function POST(req: NextRequest) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-
+export const POST = requireAdminSession(async (req, _user) => {
   try {
     const body = await req.json();
     const data = productSchema.parse(body);
@@ -58,4 +47,4 @@ export async function POST(req: NextRequest) {
     console.error("POST /api/admin/products:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
-}
+});
