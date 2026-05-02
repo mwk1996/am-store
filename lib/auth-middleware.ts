@@ -8,7 +8,7 @@ export function extractToken(req: NextRequest): string | null {
   if (authHeader?.startsWith("Bearer ")) {
     return authHeader.slice(7);
   }
-  const cookie = req.cookies.get("token");
+  const cookie = req.cookies.get("mp_token");
   if (cookie) return cookie.value;
   return null;
 }
