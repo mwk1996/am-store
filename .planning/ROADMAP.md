@@ -31,7 +31,13 @@
   3. An unverified user cannot access account features until they click the confirmation link
   4. A registered user can log in and remain authenticated across page navigations
   5. A user who forgot their password can receive a reset link by email and set a new password
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 01-01-PLAN.md — Schema extension + auth service methods + middleware helpers (Wave 1)
+- [ ] 01-02-PLAN.md — New auth API routes + rate limiting + register shopName (Wave 2)
+- [ ] 01-03-PLAN.md — SEC-07: harden all admin API routes with requireAdminSession (Wave 2)
+- [ ] 01-04-PLAN.md — [BLOCKING] Prisma db push + generate (Wave 3)
+- [ ] 01-05-PLAN.md — UI pages: login fix, register shopName, verify-email, forgot/reset password (Wave 3)
 **UI hint**: yes
 
 ---
@@ -128,7 +134,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Auth & User Accounts | 0/? | Not started | - |
+| 1. Auth & User Accounts | 0/5 | Not started | - |
 | 2. Marketplace Browsing & Listings | 0/? | Not started | - |
 | 3. Purchase & Delivery | 0/? | Not started | - |
 | 4. Wallet & Payments | 0/? | Not started | - |
