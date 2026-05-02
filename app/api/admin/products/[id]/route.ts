@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { authOptions } from "@/lib/auth";
+import { requireAdminSession, jsonError, jsonOk } from "@/lib/auth-middleware";
 import { prisma } from "@/lib/prisma";
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session) return null;
-  return session;
-}
+export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({
   name: z.object({ en: z.string(), ar: z.string(), tr: z.string(), ku: z.string() }).optional(),
@@ -18,19 +13,14 @@ const updateSchema = z.object({
   category: z.string().optional().nullable(),
 });
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-
+export const PUT = requireAdminSession(async (req, _user, ctx) => {
+  const id = ctx.params.id;
   try {
     const body = await req.json();
     const data = updateSchema.parse(body);
 
     const product = await prisma.product.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(data.name && { name: data.name }),
         ...(data.description && { description: data.description }),
@@ -45,23 +35,18 @@ export async function PUT(
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.errors }, { status: 400 });
     }
-    console.error(`PUT /api/admin/products/${params.id}:`, err);
+    console.error(`PUT /api/admin/products/${id}:`, err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const session = await requireAdmin();
-  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-
+export const DELETE = requireAdminSession(async (_req, _user, ctx) => {
+  const id = ctx.params.id;
   try {
-    await prisma.product.delete({ where: { id: params.id } });
+    await prisma.product.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error(`DELETE /api/admin/products/${params.id}:`, err);
+    console.error(`DELETE /api/admin/products/${id}:`, err);
     return NextResponse.json({ error: "Failed to delete product." }, { status: 500 });
   }
-}
+});

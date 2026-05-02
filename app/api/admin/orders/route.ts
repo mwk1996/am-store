@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAdminSession, jsonError, jsonOk } from "@/lib/auth-middleware";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+export const dynamic = "force-dynamic";
 
+export const GET = requireAdminSession(async (req, _user) => {
   const status = req.nextUrl.searchParams.get("status");
 
   const orders = await prisma.order.findMany({
@@ -19,4 +17,4 @@ export async function GET(req: NextRequest) {
   });
 
   return NextResponse.json(orders);
-}
+});
