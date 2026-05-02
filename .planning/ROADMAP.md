@@ -9,7 +9,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Auth & User Accounts** — Buyers and sellers can register, verify, and log in
+- [x] **Phase 1: Auth & User Accounts** — Buyers and sellers can register, verify, and log in ✓ 2026-05-02
 - [ ] **Phase 2: Marketplace Browsing & Listings** — Sellers can list products; buyers can browse, search, and view details
 - [ ] **Phase 3: Purchase & Delivery** — Buyers can purchase products with instant or manual delivery end-to-end
 - [ ] **Phase 4: Wallet & Payments** — Users can top up, spend, earn, and withdraw via wallet
@@ -33,11 +33,11 @@
   5. A user who forgot their password can receive a reset link by email and set a new password
 **Plans**: 5 plans
 Plans:
-- [ ] 01-01-PLAN.md — Schema extension + auth service methods + middleware helpers (Wave 1)
-- [ ] 01-02-PLAN.md — New auth API routes + rate limiting + register shopName (Wave 2)
-- [ ] 01-03-PLAN.md — SEC-07: harden all admin API routes with requireAdminSession (Wave 2)
-- [ ] 01-04-PLAN.md — [BLOCKING] Prisma db push + generate (Wave 3)
-- [ ] 01-05-PLAN.md — UI pages: login fix, register shopName, verify-email, forgot/reset password (Wave 3)
+- [x] 01-01-PLAN.md — Schema extension + auth service methods + middleware helpers (Wave 1)
+- [x] 01-02-PLAN.md — New auth API routes + rate limiting + register shopName (Wave 2)
+- [x] 01-03-PLAN.md — SEC-07: harden all admin API routes with requireAdminSession (Wave 2)
+- [x] 01-04-PLAN.md — [BLOCKING] Prisma db push + generate (Wave 3)
+- [x] 01-05-PLAN.md — UI pages: login fix, register shopName, verify-email, forgot/reset password (Wave 3)
 **UI hint**: yes
 
 ---
