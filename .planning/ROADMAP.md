@@ -52,7 +52,15 @@ Plans:
   3. A buyer can browse the marketplace and filter by category, platform, price range, and delivery type
   4. A buyer can search products by keyword and see relevant results
   5. A buyer can open a product detail page and see seller info, stock count, delivery type, and any existing reviews
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [ ] 02-01-PLAN.md — Schema migration: ProductKey, Category, enums, sellerId, seed (Wave 1 — BLOCKING)
+- [ ] 02-02-PLAN.md — lib/crypto.ts AES-256-GCM encryptKey/decryptKey utility (Wave 1)
+- [ ] 02-03-PLAN.md — Services + API routes: SEC-05 cap, key encryption, product CRUD (Wave 2)
+- [ ] 02-04-PLAN.md — Marketplace browse: featured row, platform filter, multilingual JSON (Wave 3)
+- [ ] 02-05-PLAN.md — Product detail page + retire legacy product-card.tsx (Wave 3)
+- [ ] 02-06-PLAN.md — Listing creation + edit forms at /dashboard/listings (Wave 3)
+- [ ] 02-07-PLAN.md — Dashboard Listings tab + bulk key import UI (Wave 3)
 **UI hint**: yes
 
 ---
@@ -134,8 +142,8 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Auth & User Accounts | 0/5 | Not started | - |
-| 2. Marketplace Browsing & Listings | 0/? | Not started | - |
+| 1. Auth & User Accounts | 5/5 | Complete | 2026-05-02 |
+| 2. Marketplace Browsing & Listings | 0/7 | Not started | - |
 | 3. Purchase & Delivery | 0/? | Not started | - |
 | 4. Wallet & Payments | 0/? | Not started | - |
 | 5. Trust Layer | 0/? | Not started | - |
@@ -216,4 +224,4 @@ This is an evolution of an existing codebase — not a greenfield build. The Pri
 **AdminUser model** in schema is a legacy artifact — Phase 1 plans should migrate admin auth to use `User` with `role: ADMIN` via NextAuth.
 
 ---
-*Last updated: 2026-05-02*
+*Last updated: 2026-05-03*
