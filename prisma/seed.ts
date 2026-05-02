@@ -4,7 +4,25 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create default admin user
+  // ── Seed categories ──────────────────────────────────────────────────────
+  const categories = [
+    { name: "Game Accounts", slug: "game-accounts" },
+    { name: "Software Keys", slug: "software-keys" },
+    { name: "Gift Cards", slug: "gift-cards" },
+    { name: "In-Game Items", slug: "in-game-items" },
+    { name: "Other", slug: "other" },
+  ];
+
+  for (const cat of categories) {
+    await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: {},
+      create: cat,
+    });
+  }
+  console.log("Seeded 5 categories");
+
+  // ── Seed default admin user ───────────────────────────────────────────────
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@example.com";
   const adminPassword = process.env.ADMIN_PASSWORD ?? "changeme123";
 
@@ -18,47 +36,12 @@ async function main() {
   } else {
     console.log(`Admin user already exists: ${adminEmail}`);
   }
-
-  // Create a sample product
-  const existingProduct = await prisma.product.findFirst();
-  if (!existingProduct) {
-    const product = await prisma.product.create({
-      data: {
-        name: {
-          en: "Windows 11 Pro License",
-          ar: "ترخيص ويندوز 11 برو",
-          tr: "Windows 11 Pro Lisansı",
-          ku: "مۆڵەتی ویندۆز ١١ پرۆ",
-        },
-        description: {
-          en: "Genuine Windows 11 Pro license key. Instant digital delivery.",
-          ar: "مفتاح ترخيص ويندوز 11 برو الأصلي. توصيل رقمي فوري.",
-          tr: "Orijinal Windows 11 Pro lisans anahtarı. Anında dijital teslimat.",
-          ku: "کلیلی مۆڵەتی ڕەسەنی ویندۆز ١١ پرۆ. گەیاندنی دیجیتاڵی خێرا.",
-        },
-        price: 25000,
-        imageUrl: null,
-      },
-    });
-
-    // Add some sample license keys
-    await prisma.licenseKey.createMany({
-      data: [
-        { key: "XXXXX-XXXXX-XXXXX-XXXXX-00001", productId: product.id },
-        { key: "XXXXX-XXXXX-XXXXX-XXXXX-00002", productId: product.id },
-        { key: "XXXXX-XXXXX-XXXXX-XXXXX-00003", productId: product.id },
-      ],
-    });
-
-    console.log(`Sample product created with 3 license keys.`);
-  }
 }
 
 main()
+  .then(() => prisma.$disconnect())
   .catch((e) => {
     console.error(e);
+    prisma.$disconnect();
     process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
   });
