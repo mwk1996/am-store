@@ -1,4 +1,3 @@
-// Run: npx prisma migrate dev --name add-product-category
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -11,29 +10,77 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Product {
-  id          String       @id @default(cuid())
-  name        Json         // { en, ar, tr, ku }
-  description Json         // { en, ar, tr, ku }
-  price       Decimal      @db.Decimal(10, 2)
-  imageUrl    String?
-  category    String?      @default("General")
-  sortOrder   Int          @default(0)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  licenseKeys LicenseKey[]
-  orders      Order[]
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  PENDING
+  PAID
+  DELIVERED
+  COMPLETED
+  DISPUTED
+  REFUNDED
 }
 
-model LicenseKey {
-  id         String    @id @default(cuid())
-  key        String    @unique
-  productId  String
-  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  orderId    String?   @unique
-  order      Order?    @relation(fields: [orderId], references: [id])
-  assignedAt DateTime?
-  createdAt  DateTime  @default(now())
+enum DeliveryType {
+  INSTANT
+  MANUAL
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  title        Json          // { "en": "...", "ar": "..." }
+  description  Json          // { en, ar, tr, ku }
+  price        Decimal       @db.Decimal(10, 2)
+  imageUrl     String?
+  platform     String?
+  deliveryType DeliveryType  @default(INSTANT)
+  status       ProductStatus @default(ACTIVE)
+  isFeatured   Boolean       @default(false)
+  sortOrder    Int           @default(0)
+  sellerId     String
+  seller       User          @relation("SellerProducts", fields: [sellerId], references: [id])
+  categoryId   String?
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  keys         ProductKey[]
+  orders       Order[]
+
+  @@index([sellerId])
+  @@index([status])
+  @@index([isFeatured])
+}
+
+model ProductKey {
+  id        String    @id @default(cuid())
+  keyValue  String
+  isUsed    Boolean   @default(false)
+  usedAt    DateTime?
+  productId String
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId   String?   @unique
+  order     Order?    @relation(fields: [orderId], references: [id])
+  createdAt DateTime  @default(now())
 }
 
 model Order {
@@ -41,19 +88,13 @@ model Order {
   guestEmail   String
   productId    String
   product      Product     @relation(fields: [productId], references: [id])
-  licenseKeyId String?     @unique
-  licenseKey   LicenseKey?
-  status       OrderStatus @default(pending)
+  productKeyId String?     @unique
+  productKey   ProductKey?
+  status       OrderStatus @default(PENDING)
   gatewayRef   String?
   locale       String      @default("en")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
-}
-
-enum OrderStatus {
-  pending
-  paid
-  failed
 }
 
 model AdminUser {
@@ -61,12 +102,6 @@ model AdminUser {
   email     String   @unique
   password  String   // bcrypt hashed
   createdAt DateTime @default(now())
-}
-
-enum Role {
-  BUYER
-  SELLER
-  ADMIN
 }
 
 model User {
@@ -84,6 +119,7 @@ model User {
   resetTokenExp        DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+  sellerProducts       Product[] @relation("SellerProducts")
 
   @@index([shopName])
   @@index([verificationToken])
