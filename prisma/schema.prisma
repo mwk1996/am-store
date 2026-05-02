@@ -62,3 +62,30 @@ model AdminUser {
   password  String   // bcrypt hashed
   createdAt DateTime @default(now())
 }
+
+enum Role {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  passwordHash         String
+  role                 Role      @default(BUYER)
+  name                 String
+  avatar               String?
+  shopName             String?   @unique   // SELLER only; unique store identifier
+  emailVerified        Boolean   @default(false)
+  verificationToken    String?   @unique
+  verificationTokenExp DateTime?
+  resetToken           String?   @unique
+  resetTokenExp        DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([shopName])
+  @@index([verificationToken])
+  @@index([resetToken])
+}
