@@ -1,15 +1,107 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyCallback } from "@/lib/payment/gateway";
 import { sendLicenseEmail } from "@/lib/email";
 import { getLocalizedText } from "@/lib/utils";
 import { decryptKey } from "@/lib/crypto";
+import { keyService } from "@/services/key.service";
+import { auditService } from "@/services/audit.service";
+import { getProvider } from "@/lib/payment";
+import { OrderStatus } from "@prisma/client";
 
+export const dynamic = "force-dynamic";
+
+function buildZainCashConfig() {
+  return {
+    name: "zaincash" as const,
+    enabled: true,
+    production: process.env.ZAINCASH_PRODUCTION === "true",
+    credentials: { secret: process.env.ZAINCASH_SECRET ?? "" },
+  };
+}
+
+// ZainCash callback is a browser GET redirect — token is in query params (not POST body)
+export async function GET(req: NextRequest) {
+  const token = req.nextUrl.searchParams.get("token");
+  const config = buildZainCashConfig();
+  const provider = getProvider("zaincash");
+  const verifyResult = provider.verifyCallback({ token }, config);
+
+  if (!verifyResult.valid || !verifyResult.orderId) {
+    return NextResponse.redirect(new URL("/en/checkout", req.url));
+  }
+
+  const orderId = verifyResult.orderId;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { product: true, buyer: { select: { email: true } } },
+  });
+
+  if (!order) return NextResponse.redirect(new URL("/en/checkout", req.url));
+
+  const locale = order.locale ?? "en";
+
+  // Idempotency: already PAID → skip, redirect to success
+  if (order.status === OrderStatus.PAID) {
+    return NextResponse.redirect(new URL(`/${locale}/success?order=${orderId}`, req.url));
+  }
+
+  if (verifyResult.status === "failure") {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: OrderStatus.FAILED, gatewayRef: verifyResult.gatewayRef ?? order.gatewayRef },
+    });
+    return NextResponse.redirect(new URL(`/${locale}/checkout`, req.url));
+  }
+
+  if (verifyResult.status !== "success") {
+    return NextResponse.redirect(new URL(`/${locale}/checkout`, req.url));
+  }
+
+  // Atomic: assignKey (FOR UPDATE SKIP LOCKED) + order PAID + audit KEY_REVEALED
+  const assignedKey = await prisma.$transaction(async (tx) => {
+    const key = await keyService.assignKey(tx, order.productId, orderId);
+    await tx.order.update({
+      where: { id: orderId },
+      data: {
+        status: OrderStatus.PAID,
+        productKeyId: key.id,
+        gatewayRef: verifyResult.gatewayRef ?? order.gatewayRef,
+      },
+    });
+    await auditService.log(tx, {
+      orderId,
+      event: "KEY_REVEALED",
+      ip: req.headers.get("x-forwarded-for") ?? "unknown",
+      userAgent: req.headers.get("user-agent") ?? "unknown",
+    });
+    return key;
+  });
+
+  // Non-blocking license email
+  try {
+    const emailTo = order.buyer?.email ?? order.guestEmail;
+    if (emailTo) {
+      await sendLicenseEmail({
+        to: emailTo,
+        productName: getLocalizedText(order.product.title, locale, "Product"),
+        licenseKey: decryptKey(assignedKey.keyValue),
+        orderId,
+        locale,
+      });
+    }
+  } catch (emailErr) {
+    console.error("Failed to send license email:", emailErr);
+  }
+
+  return NextResponse.redirect(new URL(`/${locale}/success?order=${orderId}`, req.url));
+}
+
+// Keep POST handler for backward compatibility (some gateways post instead of redirect)
 export async function POST(req: NextRequest) {
   try {
-    let payload: Record<string, unknown>;
     const contentType = req.headers.get("content-type") ?? "";
-
+    let payload: Record<string, unknown>;
     if (contentType.includes("application/json")) {
       payload = await req.json();
     } else {
@@ -17,74 +109,64 @@ export async function POST(req: NextRequest) {
       payload = Object.fromEntries(formData.entries());
     }
 
-    const verification = verifyCallback(payload);
+    const config = buildZainCashConfig();
+    const provider = getProvider("zaincash");
+    const verifyResult = provider.verifyCallback(payload, config);
 
-    if (!verification.valid || !verification.orderId) {
-      console.warn("Invalid payment callback signature:", payload);
+    if (!verifyResult.valid || !verifyResult.orderId) {
       return NextResponse.json({ error: "Invalid signature." }, { status: 400 });
     }
 
-    const { orderId, gatewayRef, status } = verification;
-
+    const orderId = verifyResult.orderId;
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { product: true },
+      include: { product: true, buyer: { select: { email: true } } },
     });
 
-    if (!order) {
-      return NextResponse.json({ error: "Order not found." }, { status: 404 });
-    }
+    if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
 
-    // Idempotency
-    if (order.status === "PAID" as any) {
+    if (order.status === OrderStatus.PAID) {
       return NextResponse.json({ ok: true, already: "paid" });
     }
 
-    if (status === "failure") {
+    if (verifyResult.status === "failure") {
       await prisma.order.update({
         where: { id: orderId },
-        data: { status: "FAILED" as any, gatewayRef: gatewayRef ?? order.gatewayRef },
+        data: { status: OrderStatus.FAILED, gatewayRef: verifyResult.gatewayRef ?? order.gatewayRef },
       });
       return NextResponse.json({ ok: true, status: "failed" });
     }
 
-    if (status !== "success") {
+    if (verifyResult.status !== "success") {
       return NextResponse.json({ ok: true, status: "pending" });
     }
 
-    // Atomically assign an available product key
     const assignedKey = await prisma.$transaction(async (tx) => {
-      const key = await tx.productKey.findFirst({
-        where: { productId: order.productId, isUsed: false },
-      });
-
-      if (!key) throw new Error("No available license keys for this product.");
-
-      const updated = await tx.productKey.update({
-        where: { id: key.id },
-        data: { isUsed: true, usedAt: new Date(), orderId },
-      });
-
+      const key = await keyService.assignKey(tx, order.productId, orderId);
       await tx.order.update({
         where: { id: orderId },
-        data: {
-          status: "PAID" as any,
-          productKeyId: key.id,
-          gatewayRef: gatewayRef ?? order.gatewayRef,
-        },
+        data: { status: OrderStatus.PAID, productKeyId: key.id, gatewayRef: verifyResult.gatewayRef ?? order.gatewayRef },
       });
-
-      return updated;
+      await auditService.log(tx, {
+        orderId,
+        event: "KEY_REVEALED",
+        ip: req.headers.get("x-forwarded-for") ?? "unknown",
+        userAgent: req.headers.get("user-agent") ?? "unknown",
+      });
+      return key;
     });
 
     try {
-      await sendLicenseEmail({
-        to: order.guestEmail,
-        productName: getLocalizedText(order.product.title, order.locale, "Product"),
-        licenseKey: decryptKey(assignedKey.keyValue),
-        orderId,
-        locale: order.locale,
-      });
+      const emailTo = order.buyer?.email ?? order.guestEmail;
+      if (emailTo) {
+        await sendLicenseEmail({
+          to: emailTo,
+          productName: getLocalizedText(order.product.title, order.locale, "Product"),
+          licenseKey: decryptKey(assignedKey.keyValue),
+          orderId,
+          locale: order.locale,
+        });
+      }
     } catch (emailErr) {
       console.error("Failed to send license email:", emailErr);
     }
@@ -94,28 +176,4 @@ export async function POST(req: NextRequest) {
     console.error("POST /api/payment/callback error:", err);
     return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
-}
-
-export async function GET(req: NextRequest) {
-  const searchParams = req.nextUrl.searchParams;
-  const payload: Record<string, unknown> = {};
-  searchParams.forEach((value, key) => { payload[key] = value; });
-
-  const verification = verifyCallback(payload);
-
-  if (!verification.valid || !verification.orderId) {
-    return NextResponse.redirect(new URL("/en/checkout", req.url));
-  }
-
-  const { orderId, status } = verification;
-
-  if (status === "success") {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    const locale = order?.locale ?? "en";
-    return NextResponse.redirect(new URL(`/${locale}/success?order=${orderId}`, req.url));
-  }
-
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
-  const locale = order?.locale ?? "en";
-  return NextResponse.redirect(new URL(`/${locale}/checkout`, req.url));
 }

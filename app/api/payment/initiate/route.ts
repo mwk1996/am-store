@@ -1,58 +1,66 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { initiatePayment } from "@/lib/payment/gateway";
-import { getLocalizedText } from "@/lib/utils";
+import { verifyToken, jsonError } from "@/lib/auth-middleware";
+import { getProvider } from "@/lib/payment";
+import type { GatewayName, GatewayConfig } from "@/lib/payment/types";
+import { OrderStatus } from "@prisma/client";
 
-const schema = z.object({
+export const dynamic = "force-dynamic";
+
+// "wallet" excluded — wallet payments are completed atomically in POST /api/orders
+const initiateSchema = z.object({
   orderId: z.string().min(1),
+  gateway: z.enum(["zaincash", "qi-card", "fib", "asia-pay", "fast-pay"]),
 });
+
+function buildGatewayConfig(gateway: GatewayName): GatewayConfig {
+  if (gateway === "zaincash") {
+    return {
+      name: "zaincash",
+      enabled: true,
+      production: process.env.ZAINCASH_PRODUCTION === "true",
+      credentials: {
+        msisdn: process.env.ZAINCASH_MSISDN ?? "",
+        merchantId: process.env.ZAINCASH_MERCHANT_ID ?? "",
+        secret: process.env.ZAINCASH_SECRET ?? "",
+      },
+    };
+  }
+  return { name: gateway, enabled: true, production: false, credentials: {} };
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { orderId } = schema.parse(body);
+    const user = verifyToken(req);
+    if (!user) return jsonError("Unauthorized", 401);
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    const raw = await req.json();
+    // Guard: wallet must not reach this route
+    if (raw?.gateway === "wallet") {
+      return NextResponse.json(
+        { error: "Wallet payments are processed during order creation" },
+        { status: 400 }
+      );
+    }
+
+    const { orderId, gateway } = initiateSchema.parse(raw);
+
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, buyerId: user.userId, status: OrderStatus.PENDING },
       include: { product: true },
     });
 
-    if (!order) {
-      return NextResponse.json({ error: "Order not found." }, { status: 404 });
-    }
+    if (!order) return jsonError("Order not found or not in PENDING status.", 404);
 
-    if (order.status !== "PENDING" as any) {
-      return NextResponse.json({ error: "Order is not in pending state." }, { status: 409 });
-    }
+    const provider = getProvider(gateway as GatewayName);
+    const config = buildGatewayConfig(gateway as GatewayName);
+    const result = await provider.initiate(order as any, config);
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const callbackUrl = `${appUrl}/api/payment/callback`;
-    const successUrl = `${appUrl}/${order.locale}/success?order=${orderId}`;
-    const failureUrl = `${appUrl}/${order.locale}/checkout`;
-
-    const result = await initiatePayment({
-      orderId,
-      amount: Number(order.product.price),
-      currency: "IQD",
-      customerEmail: order.guestEmail,
-      description: getLocalizedText(order.product.title, order.locale, "Software License"),
-      callbackUrl,
-      successUrl,
-      failureUrl,
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { gatewayRef: result.gatewayRef },
     });
-
-    if (!result.success || !result.redirectUrl) {
-      return NextResponse.json({ error: result.error ?? "Payment initiation failed." }, { status: 502 });
-    }
-
-    // Store gateway reference on order
-    if (result.gatewayRef) {
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { gatewayRef: result.gatewayRef },
-      });
-    }
 
     return NextResponse.json({ redirectUrl: result.redirectUrl });
   } catch (err) {

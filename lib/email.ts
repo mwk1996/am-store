@@ -111,3 +111,18 @@ export async function sendLicenseEmail({
     html,
   });
 }
+
+export async function sendDeliveryEmail(
+  to: string,
+  orderId: string,
+  credentials: string
+): Promise<void> {
+  const fromEmail = process.env.EMAIL_FROM ?? "noreply@example.com";
+  await resend.emails.send({
+    from: fromEmail,
+    to,
+    subject: `Your order #${orderId} has been delivered`,
+    html: `<p>The seller has posted your game account credentials:</p><pre style="background:#f4f4f5;padding:16px;border-radius:6px;">${credentials}</pre><p>Please confirm receipt within 24 hours.</p>`,
+    text: `The seller has posted your game account credentials:\n\n${credentials}\n\nPlease confirm receipt within 24 hours.`,
+  });
+}
