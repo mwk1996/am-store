@@ -13,11 +13,11 @@ const importSchema = z.object({
 export const GET = requireAdminSession(async (req, _user) => {
   const productId = req.nextUrl.searchParams.get("productId");
 
-  const keys = await prisma.licenseKey.findMany({
+  const keys = await prisma.productKey.findMany({
     where: productId ? { productId } : undefined,
     orderBy: { createdAt: "desc" },
     include: {
-      product: { select: { name: true } },
+      product: { select: { title: true } },
       order: { select: { guestEmail: true } },
     },
   });
@@ -38,19 +38,20 @@ export const POST = requireAdminSession(async (req, _user) => {
 
     // Deduplicate and skip existing keys
     const uniqueKeys = Array.from(new Set<string>(keys));
-    const existing = await prisma.licenseKey.findMany({
-      where: { key: { in: uniqueKeys } },
-      select: { key: true },
+    const existing = await prisma.productKey.findMany({
+      where: { keyValue: { in: uniqueKeys } },
+      select: { keyValue: true },
     });
-    const existingSet = new Set(existing.map((k) => k.key));
+    const existingSet = new Set(existing.map((k) => k.keyValue));
     const newKeys = uniqueKeys.filter((k) => !existingSet.has(k));
 
     if (newKeys.length === 0) {
       return NextResponse.json({ count: 0, message: "All keys already exist." });
     }
 
-    await prisma.licenseKey.createMany({
-      data: newKeys.map((key) => ({ key, productId })),
+    const { encryptKey } = await import("@/lib/crypto");
+    await prisma.productKey.createMany({
+      data: newKeys.map((key) => ({ keyValue: encryptKey(key), productId })),
     });
 
     return NextResponse.json({ count: newKeys.length }, { status: 201 });

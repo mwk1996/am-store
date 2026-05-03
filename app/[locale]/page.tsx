@@ -51,18 +51,18 @@ export default async function StorePage({ params: { locale } }: StorePageProps) 
     include: {
       _count: {
         select: {
-          licenseKeys: { where: { orderId: null } },
+          keys: { where: { isUsed: false } },
         },
       },
     },
   });
 
   const availableProducts = products
-    .filter((p) => p._count.licenseKeys > 0)
+    .filter((p) => p._count.keys > 0)
     .map((p) => ({
       ...p,
       price: p.price.toString(),
-      name: p.name as Record<string, string>,
+      title: p.title as Record<string, string>,
       description: p.description as Record<string, string>,
     }));
 

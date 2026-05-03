@@ -6,13 +6,13 @@ import { CategoryFilter } from "@/components/category-filter";
 
 interface Product {
   id: string;
-  name: Record<string, string>;
+  title: Record<string, string>;
   description: Record<string, string>;
   price: string;
   imageUrl?: string | null;
   category?: string | null;
   sortOrder?: number;
-  _count?: { licenseKeys: number };
+  _count?: { keys: number };
 }
 
 interface ProductsSectionProps {
@@ -58,7 +58,7 @@ export function ProductsSection({
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((p) => {
         const name =
-          (p.name[locale] ?? p.name["en"] ?? "").toLowerCase();
+          (p.title[locale] ?? p.title["en"] ?? "").toLowerCase();
         const desc =
           (p.description[locale] ?? p.description["en"] ?? "").toLowerCase();
         return name.includes(q) || desc.includes(q);

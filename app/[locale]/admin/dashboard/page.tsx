@@ -7,17 +7,17 @@ export default async function DashboardPage() {
 
   const [totalOrders, paidOrders, availableKeys] = await Promise.all([
     prisma.order.count(),
-    prisma.order.count({ where: { status: "paid" } }),
-    prisma.licenseKey.count({ where: { orderId: null } }),
+    prisma.order.count({ where: { status: "PAID" as any } }),
+    prisma.productKey.count({ where: { isUsed: false } }),
   ]);
 
   const paidOrdersWithProducts = await prisma.order.findMany({
-    where: { status: "paid" },
+    where: { status: "PAID" as any },
     include: { product: { select: { price: true } } },
-  });
+  }) as any[];
 
   const totalRevenue = paidOrdersWithProducts.reduce(
-    (sum, order) => sum + Number(order.product.price),
+    (sum: number, order: any) => sum + Number(order.product.price),
     0
   );
 
@@ -63,7 +63,7 @@ export default async function DashboardPage() {
   const recentOrders = await prisma.order.findMany({
     take: 5,
     orderBy: { createdAt: "desc" },
-    include: { product: { select: { name: true } } },
+    include: { product: { select: { title: true } } },
   });
 
   const tOrders = await getTranslations("admin.orders");
@@ -109,15 +109,15 @@ export default async function DashboardPage() {
                   <div>
                     <p className="font-medium">{order.guestEmail}</p>
                     <p className="text-xs text-muted-foreground">
-                      {(order.product.name as Record<string, string>)["en"] ?? "Product"}
+                      {(order.product.title as Record<string, string>)["en"] ?? "Product"}
                     </p>
                   </div>
                   <div className="text-right">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        order.status === "paid"
+                        order.status === "PAID"
                           ? "bg-emerald-400/10 text-emerald-400 ring-1 ring-emerald-400/20"
-                          : order.status === "pending"
+                          : order.status === "PENDING"
                           ? "bg-amber-400/10 text-amber-400 ring-1 ring-amber-400/20"
                           : "bg-red-400/10 text-red-400 ring-1 ring-red-400/20"
                       }`}

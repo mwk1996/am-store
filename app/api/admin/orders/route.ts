@@ -8,11 +8,11 @@ export const GET = requireAdminSession(async (req, _user) => {
   const status = req.nextUrl.searchParams.get("status");
 
   const orders = await prisma.order.findMany({
-    where: status ? { status: status as "pending" | "paid" | "failed" } : undefined,
+    where: status ? { status: status.toUpperCase() as any } : undefined,
     orderBy: { createdAt: "desc" },
     include: {
-      product: { select: { name: true } },
-      licenseKey: { select: { key: true } },
+      product: { select: { title: true } },
+      productKey: { select: { id: true } },
     },
   });
 

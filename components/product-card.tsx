@@ -6,7 +6,7 @@ import { getLocalizedText, formatPrice } from "@/lib/utils";
 interface ProductCardProps {
   product: {
     id: string;
-    name: unknown;
+    title: unknown;
     description: unknown;
     price: string | number;
     imageUrl?: string | null;
@@ -17,7 +17,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, locale, buyLabel, currency }: ProductCardProps) {
-  const name = getLocalizedText(product.name, locale, "Product");
+  const name = getLocalizedText(product.title, locale, "Product");
   const description = getLocalizedText(product.description, locale, "");
   const price = formatPrice(product.price, locale);
 
