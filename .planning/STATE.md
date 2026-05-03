@@ -1,7 +1,7 @@
 # STATE — Digital License & Game Account Marketplace
 
-**Last updated:** 2026-05-02
-**Session:** Phase 1 execution complete
+**Last updated:** 2026-05-03
+**Session:** Phase 2 execution complete
 
 ---
 
@@ -17,12 +17,12 @@
 
 ## Current Position
 
-**Current phase:** Phase 2 — Marketplace Browsing & Listings
+**Current phase:** Phase 3 — Purchase & Delivery
 **Current plan:** None — awaiting planning
-**Status:** Phase 1 complete ✓ — ready for Phase 2
+**Status:** Phase 2 complete ✓ — ready for Phase 3
 
 ```
-Progress: [███░░░░░░░░░░░░░░░░░] 14% — Phase 1 of 7 complete
+Progress: [██████░░░░░░░░░░░░░░] 28% — Phase 2 of 7 complete
 ```
 
 ---
@@ -32,7 +32,7 @@ Progress: [███░░░░░░░░░░░░░░░░░] 14% —
 | Phase | Status | Started | Completed |
 |-------|--------|---------|-----------|
 | 1 — Auth & User Accounts | Complete ✓ | 2026-05-02 | 2026-05-02 |
-| 2 — Marketplace Browsing & Listings | Not started | - | - |
+| 2 — Marketplace Browsing & Listings | Complete ✓ | 2026-05-03 | 2026-05-03 |
 | 3 — Purchase & Delivery | Not started | - | - |
 | 4 — Wallet & Payments | Not started | - | - |
 | 5 — Trust Layer | Not started | - | - |
@@ -54,24 +54,27 @@ Progress: [███░░░░░░░░░░░░░░░░░] 14% —
 | AR + EN only for v1 | Reduces i18n surface area — TR/KU deferred |
 | Wallet-hold escrow model | Simpler than full escrow; correct for v1 |
 | Prisma `$transaction` throughout wallet/escrow/key services | Already in place — keep it |
+| Multilingual product fields as Json (`{"en":"...","ar":"..."}`) | Phase 2 decision — all products use this format |
+| AES-256-GCM key encryption at rest | SEC-02 implemented in Phase 2 via `lib/crypto.ts` |
+| Seller listing cap: 10 active listings (0 completed orders) | SEC-05 enforced server-side + UI banner |
+| 7-day earnings hold for new sellers | SEC-04 dismissible banner on dashboard |
 
 ### Critical Implementation Notes
 
 1. **Key assignment race condition** — Must use `SELECT FOR UPDATE SKIP LOCKED` before Phase 3 ships. Duplicate key delivery = refund liability.
 2. **Wallet double-spend** — Must use atomic `UPDATE wallet SET balance = balance - amount WHERE balance >= amount`. Read-then-write without lock = negative balance possible.
-3. **AdminUser migration** — Legacy `AdminUser` table in schema must be migrated to `User` with `role: ADMIN`. Plan this in Phase 1.
-4. **Delivery auto-confirm cron** — Phase 3 needs a Vercel Cron job sweeping orders past `confirmDeadline` — without this, expired orders pile up.
-5. **Key encryption** — `SEC-02` requires keys encrypted at rest. `keyValue` column in `ProductKey` has comment "stored encrypted" but encryption implementation must be verified/added in Phase 2.
+3. **Delivery auto-confirm cron** — Phase 3 needs a Vercel Cron job sweeping orders past `confirmDeadline` — without this, expired orders pile up.
+4. **Phase 4/5 services are stubbed** — escrow, wallet, notification, review services throw "not implemented" — do not call them in production until their phases ship.
+5. **Guest order model** — Current Order schema has no `buyerId`/`sellerId` — Phase 3 needs to decide whether to add these or keep guest-only.
 
-### Schema Gaps (Need Migration Before Shipping)
+### Schema Notes (Phase 2 Complete)
 
-- `Product` missing `deliveryType INSTANT/MANUAL` enum field
-- `Order` missing `confirmDeadline DateTime?` (for cron sweep)
-- `Transaction` missing `gatewayRef` (idempotent top-up callbacks)
-- `Product` missing `isFeatured Boolean` (LISTING-04)
-- `User` missing `emailVerified Boolean` / `verificationToken` (AUTH-03)
-- `User` missing `isVerifiedSeller Boolean` and `isSuspended Boolean` (TRUST-04, ADMIN-02)
-- `User` missing `listingCount` or capped via query (SEC-05)
+- `Product`: `title Json`, `description Json`, `deliveryType DeliveryType`, `status ProductStatus`, `isFeatured Boolean`, `platform String?`, `sellerId String`, `categoryId String?`
+- `ProductKey`: renamed from `LicenseKey`; `keyValue String` (AES-256-GCM encrypted), `isUsed Boolean`, `usedAt DateTime?`
+- `Category`: seeded with Gaming, Software, Office, Antivirus, Other
+- `OrderStatus` enum: PENDING/PAID/DELIVERED/COMPLETED/DISPUTED/REFUNDED
+- `DeliveryType` enum: INSTANT/MANUAL
+- `ProductStatus` enum: ACTIVE/INACTIVE
 
 ### Open Questions (Need Product Owner Input)
 
@@ -80,13 +83,14 @@ Progress: [███░░░░░░░░░░░░░░░░░] 14% —
 3. Dispute window for keys vs accounts — 3 days or 14 days?
 4. Commission rate — 10% confirmed for launch?
 5. Payout method for sellers — ZainCash transfer, bank transfer, or FIB?
-6. Withdrawal identity verification threshold amount?
+6. Phase 3: keep guest checkout or require buyer accounts for purchase?
 
 ### Todos
 
 - [ ] Answer open gateway/payment questions before Phase 4 planning
 - [ ] Confirm manual delivery SLA before Phase 3 planning
 - [ ] Decide commission rate before Phase 3 planning
+- [ ] Decide guest vs. buyer-account model before Phase 3 planning
 
 ### Blockers
 
@@ -99,10 +103,8 @@ None currently.
 | Metric | Value |
 |--------|-------|
 | Requirements defined | 47 |
-| Requirements mapped | 47 |
 | Phases planned | 7 |
-| Plans created | 0 |
-| Plans completed | 0 |
+| Plans completed | 14 (7 Phase 1 + 7 Phase 2) |
 
 ---
 
@@ -111,8 +113,7 @@ None currently.
 To resume work:
 1. Read `.planning/ROADMAP.md` for phase structure and success criteria
 2. Read `.planning/REQUIREMENTS.md` for full requirement list and traceability
-3. Read `.planning/research/SUMMARY.md` for architectural decisions and pitfalls
-4. Run `/gsd-plan-phase 1` to begin Phase 1 planning
+3. Run `/gsd-discuss-phase 3` to capture Phase 3 decisions, then `/gsd-plan-phase 3`
 
 ---
-*Next action: `/gsd-plan-phase 1` — Auth & User Accounts*
+*Next action: `/gsd-discuss-phase 3` — Purchase & Delivery*
