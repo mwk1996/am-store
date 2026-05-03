@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const product = await prisma.product.findUnique({
       where: { id: productId },
       include: {
-        _count: { select: { licenseKeys: { where: { orderId: null } } } },
+        _count: { select: { keys: { where: { isUsed: false } } } },
       },
     });
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Product not found." }, { status: 404 });
     }
 
-    if (product._count.licenseKeys === 0) {
+    if (product._count.keys === 0) {
       return NextResponse.json({ error: "No license keys available for this product." }, { status: 409 });
     }
 
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         guestEmail: email,
         productId,
         locale,
-        status: "pending",
+        status: "PENDING" as any,
       },
     });
 

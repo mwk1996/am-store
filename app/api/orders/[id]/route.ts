@@ -9,8 +9,8 @@ export async function GET(
     const order = await prisma.order.findUnique({
       where: { id: params.id },
       include: {
-        product: { select: { name: true, description: true } },
-        licenseKey: { select: { key: true } },
+        product: { select: { title: true, description: true } },
+        productKey: { select: { id: true } },
       },
     });
 

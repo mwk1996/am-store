@@ -9,12 +9,12 @@ export async function GET(req: NextRequest) {
   }
 
   const orders = await prisma.order.findMany({
-    where: { guestEmail: email, status: "paid" },
+    where: { guestEmail: email, status: "PAID" as any },
     orderBy: { createdAt: "desc" },
     take: 20,
     include: {
-      product: { select: { name: true } },
-      licenseKey: { select: { key: true } },
+      product: { select: { title: true } },
+      productKey: { select: { id: true } },
     },
   });
 

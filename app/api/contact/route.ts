@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     await resend.emails.send({
       from: fromEmail,
       to: adminEmail,
-      replyTo: email,
+      reply_to: email,
       subject: `[Contact] ${subject}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">

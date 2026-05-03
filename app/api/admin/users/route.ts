@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdminSession, jsonError, jsonOk } from "@/lib/auth-middleware";
+import { requireAdminSession } from "@/lib/auth-middleware";
 import { Role } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -27,8 +27,7 @@ export const GET = requireAdminSession(async (req, _user) => {
         role: true,
         avatar: true,
         createdAt: true,
-        wallet: { select: { balance: true, pendingBalance: true } },
-        _count: { select: { buyerOrders: true, sellerOrders: true, products: true } },
+        _count: { select: { sellerProducts: true } },
       },
     }),
     prisma.user.count({ where }),

@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (keyList.length === 0) return jsonError("No valid keys provided");
 
     // De-duplicate plaintext keys before encryption (SEC-02 note: each encrypts differently)
-    const uniqueKeys = [...new Set(keyList)];
+    const uniqueKeys = Array.from(new Set(keyList));
 
     const result = await keyService.bulkCreate(params.id, uniqueKeys);
     return NextResponse.json({ created: result.count }, { status: 201 });

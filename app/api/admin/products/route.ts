@@ -6,17 +6,20 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const productSchema = z.object({
-  name: z.object({ en: z.string(), ar: z.string(), tr: z.string(), ku: z.string() }),
-  description: z.object({ en: z.string(), ar: z.string(), tr: z.string(), ku: z.string() }),
+  title: z.object({ en: z.string(), ar: z.string() }),
+  description: z.object({ en: z.string(), ar: z.string() }),
   price: z.number().positive(),
   imageUrl: z.string().url().optional().or(z.literal("").transform(() => undefined)),
-  category: z.string().optional().default("General"),
+  categoryId: z.string().optional(),
+  platform: z.string().optional(),
+  deliveryType: z.enum(["INSTANT", "MANUAL"]).optional(),
+  sellerId: z.string().min(1),
 });
 
 export const GET = requireAdminSession(async (_req, _user) => {
   const products = await prisma.product.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { licenseKeys: true } } },
+    include: { _count: { select: { keys: true } } },
   });
 
   return NextResponse.json(
@@ -31,11 +34,14 @@ export const POST = requireAdminSession(async (req, _user) => {
 
     const product = await prisma.product.create({
       data: {
-        name: data.name,
+        title: data.title,
         description: data.description,
         price: data.price,
         imageUrl: data.imageUrl ?? null,
-        category: data.category,
+        sellerId: data.sellerId,
+        ...(data.categoryId && { categoryId: data.categoryId }),
+        ...(data.platform && { platform: data.platform }),
+        ...(data.deliveryType && { deliveryType: data.deliveryType }),
       },
     });
 

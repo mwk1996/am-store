@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminSession, jsonError, jsonOk } from "@/lib/auth-middleware";
+import { requireAdminSession } from "@/lib/auth-middleware";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({
-  name: z.object({ en: z.string(), ar: z.string(), tr: z.string(), ku: z.string() }).optional(),
-  description: z.object({ en: z.string(), ar: z.string(), tr: z.string(), ku: z.string() }).optional(),
+  title: z.object({ en: z.string(), ar: z.string() }).optional(),
+  description: z.object({ en: z.string(), ar: z.string() }).optional(),
   price: z.number().positive().optional(),
   imageUrl: z.string().url().optional().nullable(),
-  category: z.string().optional().nullable(),
+  categoryId: z.string().optional().nullable(),
+  platform: z.string().optional().nullable(),
+  deliveryType: z.enum(["INSTANT", "MANUAL"]).optional(),
 });
 
 export const PUT = requireAdminSession(async (req, _user, ctx) => {
@@ -22,11 +24,15 @@ export const PUT = requireAdminSession(async (req, _user, ctx) => {
     const product = await prisma.product.update({
       where: { id },
       data: {
-        ...(data.name && { name: data.name }),
+        ...(data.title && { title: data.title }),
         ...(data.description && { description: data.description }),
         ...(data.price !== undefined && { price: data.price }),
         ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
-        ...(data.category !== undefined && { category: data.category }),
+        ...(data.categoryId !== undefined && {
+          ...(data.categoryId ? { category: { connect: { id: data.categoryId } } } : { category: { disconnect: true } }),
+        }),
+        ...(data.platform !== undefined && { platform: data.platform }),
+        ...(data.deliveryType && { deliveryType: data.deliveryType }),
       },
     });
 
@@ -47,6 +53,6 @@ export const DELETE = requireAdminSession(async (_req, _user, ctx) => {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(`DELETE /api/admin/products/${id}:`, err);
-    return NextResponse.json({ error: "Failed to delete product." }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 });

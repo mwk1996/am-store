@@ -34,7 +34,7 @@ function buildBaseWhere(filters: ProductFilters): Prisma.ProductWhereInput {
 
 const productInclude = {
   category: true,
-  seller: { select: { id: true, name: true, avatar: true } },
+  seller: { select: { id: true, name: true, avatar: true, createdAt: true } },
   _count: {
     select: {
       keys: { where: { isUsed: false } },

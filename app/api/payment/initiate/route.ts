@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Order not found." }, { status: 404 });
     }
 
-    if (order.status !== "pending") {
+    if (order.status !== "PENDING" as any) {
       return NextResponse.json({ error: "Order is not in pending state." }, { status: 409 });
     }
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       amount: Number(order.product.price),
       currency: "IQD",
       customerEmail: order.guestEmail,
-      description: getLocalizedText(order.product.name, order.locale, "Software License"),
+      description: getLocalizedText(order.product.title, order.locale, "Software License"),
       callbackUrl,
       successUrl,
       failureUrl,

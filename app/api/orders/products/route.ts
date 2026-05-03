@@ -7,11 +7,11 @@ export async function GET() {
     const products = await prisma.product.findMany({
       orderBy: { createdAt: "desc" },
       where: {
-        licenseKeys: { some: { orderId: null } },
+        keys: { some: { isUsed: false } },
       },
       select: {
         id: true,
-        name: true,
+        title: true,
         description: true,
         price: true,
         imageUrl: true,
