@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, password } = schema.parse(body);
     const result = await authService.login(email, password);
-    const res = NextResponse.json({ user: result.user });
+    const res = NextResponse.json({ user: result.user, token: result.token });
     res.cookies.set("mp_token", result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

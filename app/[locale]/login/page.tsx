@@ -35,7 +35,7 @@ export default function LoginPage() {
         return;
       }
 
-      // No localStorage — token lives in httpOnly cookie set by the server
+      localStorage.setItem("auth_token", data.token);
       router.push(`/${locale}/dashboard`);
     } finally {
       setLoading(false);
