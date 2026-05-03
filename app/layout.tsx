@@ -6,10 +6,7 @@ export const metadata: Metadata = {
   description: "Purchase premium software licenses instantly.",
 };
 
+// Root layout is intentionally minimal — lang/dir/body styles are set in app/[locale]/layout.tsx
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html>
-      <body>{children}</body>
-    </html>
-  );
+  return children as React.ReactElement;
 }
