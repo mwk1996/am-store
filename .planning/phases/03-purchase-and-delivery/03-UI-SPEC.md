@@ -50,17 +50,19 @@ Exceptions:
 
 ## Typography
 
+Two weights only: **400** (regular) for body, captions, hints, key value; **600** (semibold) for all emphasized text — labels, headings, CTAs, display/page title.
+
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px (`text-sm`) | 400 (regular) | 1.5 |
-| Label / UI text | 14px (`text-sm`) | 500 (medium) | 1.25 |
+| Label / UI text | 14px (`text-sm`) | 600 (semibold) | 1.25 |
 | Heading (card/section) | 16px (`text-base`) | 600 (semibold) | 1.3 |
-| Display (page title) | 30px (`text-3xl`) | 700 (bold) | 1.2 |
+| Display (page title) | 30px (`text-3xl`) | 600 (semibold) | 1.2 |
 
 Supporting sizes:
 - Caption / hint text: 12px (`text-xs`) at weight 400, line-height 1.25
-- Key value (monospace): 14px (`font-mono text-sm`) at weight 500
-- Badge label: 12px (`text-xs`) at weight 500
+- Key value (monospace): 14px (`font-mono text-sm`) at weight 400
+- Badge label: 12px (`text-xs`) at weight 600
 
 Font family: `'Inter'` with `font-feature-settings: "cv02", "cv03", "cv04", "cv11"` — already applied globally via `globals.css`.
 
@@ -77,7 +79,7 @@ Font family: `'Inter'` with `font-feature-settings: "cv02", "cv03", "cv04", "cv1
 | Destructive | `hsl(0 84% 60%)` — `bg-destructive` | Cancel order action only |
 
 Accent (`hsl(25 95% 53%)`) is reserved **only** for:
-1. "Buy Now" / "Pay [amount]" submit button on checkout
+1. "Buy Now" / "Pay [amount] IQD" submit button on checkout
 2. "Confirm Receipt" button on buyer order detail (DELIVERED state)
 3. "Deliver" submit button inside seller delivery modal
 4. Wallet balance "Pay with Wallet" button (when active)
@@ -104,10 +106,10 @@ Order status badge colors (established in Phase 2 — do not change):
 
 **Gateway selector grid:**
 - Rendered as a `grid grid-cols-2 sm:grid-cols-3` of selectable tiles, not a dropdown
-- Each tile: `rounded-xl border border-border/60 bg-secondary/50 p-4 cursor-pointer transition-all` 
+- Each tile: `rounded-xl border border-border/60 bg-secondary/50 p-4 cursor-pointer transition-all`
 - Selected state: `border-primary/60 bg-primary/10 ring-1 ring-primary/40`
 - Hover state: `border-border hover:border-primary/30`
-- Content: gateway logo/icon + name label (`text-xs font-medium text-center`)
+- Content: gateway logo/icon + name label (`text-xs font-semibold text-center`)
 - Use `RadioGroup` from shadcn/ui as the underlying control
 - Gateways: QI Card, ZainCash, FIB, Asia Pay, Fast Pay (5 tiles)
 - Disabled gateway tile (for future toggle): `opacity-40 cursor-not-allowed pointer-events-none`
@@ -125,7 +127,7 @@ Order status badge colors (established in Phase 2 — do not change):
 
 **Progress indicator:** 3-step pill row centered above the card grid — "Details" (step 1 active), "Payment" (step 2 inactive), "Receive" (step 3 inactive). Use existing pattern from `checkout/page.tsx` exactly.
 
-**Primary CTA:** "Pay [price] IQD" (e.g., "Pay 15,000 IQD") — full width, accent background, `rounded-xl py-3.5 text-sm font-bold`. Loading state: spinner + "Processing...". Disabled when no gateway selected.
+**Primary CTA:** "Pay [price] IQD" (e.g., "Pay 15,000 IQD") — full width, accent background, `rounded-xl py-3.5 text-sm font-semibold`. Loading state: spinner + "Processing...". Disabled when no gateway selected.
 
 ---
 
@@ -153,13 +155,13 @@ Order status badge colors (established in Phase 2 — do not change):
 
 **Success header:**
 - `CheckCircle2` icon (`h-12 w-12 text-emerald-400`) centered with `animate-fade-in`
-- Heading: "Payment Successful" at `text-2xl font-bold`
+- Heading: "Payment Successful" at `text-2xl font-semibold`
 - Sub: "Your order has been confirmed." at `text-sm text-muted-foreground`
 
 **Key reveal box (INSTANT delivery):**
 - Card: `rounded-2xl border border-primary/20 bg-primary/5 backdrop-blur-sm p-6`
 - Section label: "Your License Key" at `text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3`
-- Key value: `font-mono text-sm font-medium` inside `rounded-lg border border-border/60 bg-secondary/60 px-4 py-3 break-all select-all`
+- Key value: `font-mono text-sm font-normal` inside `rounded-lg border border-border/60 bg-secondary/60 px-4 py-3 break-all select-all`
 - Copy button: icon-only `Button` variant `ghost` with `Copy` lucide icon, positioned `absolute top-2 right-2` relative to the key box. On click: icon changes to `Check` for 2 seconds, toast "Copied to clipboard"
 - Email notice: `text-xs text-muted-foreground` — "We've also sent this key to [email]"
 
@@ -177,7 +179,7 @@ Order status badge colors (established in Phase 2 — do not change):
 
 **Layout:** `max-w-4xl mx-auto py-10 px-4`
 
-**Page heading:** "My Orders" at `text-2xl font-bold` + order count badge `text-xs bg-secondary rounded-full px-2 py-0.5`
+**Page heading:** "My Orders" at `text-2xl font-semibold` + order count badge `text-xs bg-secondary rounded-full px-2 py-0.5`
 
 **Empty state:**
 - `ShoppingBag` icon (`h-12 w-12 text-muted-foreground/40`) centered
@@ -192,7 +194,7 @@ Table columns: Product | Type | Status | Date | Price | Action
 - Type: `Zap` (INSTANT) or `Clock` (MANUAL) icon with label `text-xs text-muted-foreground`
 - Status: `<Badge>` using `STATUS_COLORS` map from established pattern
 - Date: formatted `dd MMM yyyy` at `text-xs text-muted-foreground`
-- Price: `text-sm font-medium`
+- Price: `text-sm font-semibold`
 - Action: context-sensitive (see below)
 
 **Row action — context by status:**
@@ -215,7 +217,7 @@ Used for MANUAL delivery orders. Shown as a vertical 3-step stepper inside the o
 2. "Awaiting Delivery" → "Delivered" — completed when seller posts credentials (`CheckCircle2 text-emerald-400` / `Clock text-amber-400` pending)
 3. "Receipt Confirmed" — completed when buyer confirms or auto-confirms (`CheckCircle2 text-emerald-400` / ghost when pending)
 
-**Visual:** Vertical connector line `w-px h-8 bg-border/60 ml-3` between steps. Each step: `flex items-start gap-3`, icon `h-4 w-4 shrink-0 mt-0.5`, label `text-sm font-medium`, sublabel `text-xs text-muted-foreground`.
+**Visual:** Vertical connector line `w-px h-8 bg-border/60 ml-3` between steps. Each step: `flex items-start gap-3`, icon `h-4 w-4 shrink-0 mt-0.5`, label `text-sm font-semibold`, sublabel `text-xs text-muted-foreground`.
 
 **Confirm Receipt CTA** (step 3 pending): Accent button "Confirm Receipt" + helper text "Auto-confirms in [N] hours if you don't respond." Opens a `Dialog` with title "Confirm Receipt?", body "By confirming, you verify you've received the account credentials and the seller will be paid.", two buttons: "Cancel" (outline) and "Confirm Receipt" (accent).
 
