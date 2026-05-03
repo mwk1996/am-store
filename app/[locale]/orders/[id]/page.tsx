@@ -5,33 +5,28 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { EscrowTimeline } from "@/components/orders/EscrowTimeline";
-import { OrderActions } from "@/components/orders/OrderActions";
-import { ChatWindow } from "@/components/chat/ChatWindow";
-import {
-  ArrowLeft, Package, Copy, Check, ExternalLink,
-} from "lucide-react";
-
-type OrderStatus = "PENDING" | "PAID" | "DELIVERED" | "COMPLETED" | "DISPUTED" | "REFUNDED";
+import { getLocalizedText } from "@/lib/utils";
+import { KeyRevealBox } from "@/components/purchase/KeyRevealBox";
+import { DeliveryTimeline } from "@/components/purchase/DeliveryTimeline";
+import { ConfirmReceiptDialog } from "@/components/purchase/ConfirmReceiptDialog";
+import { OrderStatusBadge } from "@/components/purchase/OrderStatusBadge";
+import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 
 interface OrderDetail {
   id: string;
-  status: OrderStatus;
-  amount: number;
-  commission: number;
+  status: string;
   createdAt: string;
-  escrowReleasedAt?: string;
+  deliveredAt: string | null;
+  confirmedAt: string | null;
+  confirmDeadline: string | null;
+  credentials: string | null;
   product: {
     id: string;
-    title: string;
-    type: string;
-    images: string[];
+    title: unknown;
+    imageUrl: string | null;
+    deliveryType: "INSTANT" | "MANUAL";
   };
-  buyer: { id: string; name: string; email: string };
-  seller: { id: string; name: string; email: string };
-  assignedKey?: { keyValue: string };
-  dispute?: { id: string; status: string; reason: string; resolution?: string };
-  review?: { rating: number; comment: string };
+  productKey: { id: string } | null;
 }
 
 export default function OrderDetailPage() {
@@ -40,38 +35,25 @@ export default function OrderDetailPage() {
   const locale = (params?.locale as string) ?? "en";
   const orderId = params?.id as string;
 
+  const [token, setToken] = useState("");
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
-  async function fetchOrder() {
-    const token = localStorage.getItem("auth_token");
-    if (!token) { router.push(`/${locale}/login`); return; }
-    setAuthToken(token);
-
-    const [orderRes, meRes] = await Promise.all([
-      fetch(`/api/orders/${orderId}`, { headers: { Authorization: `Bearer ${token}` } }),
-      fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } }),
-    ]);
-
-    if (orderRes.ok) setOrder(await orderRes.json());
-    if (meRes.ok) {
-      const me = await meRes.json();
-      setCurrentUserId(me.id);
-    }
+  async function fetchOrder(tok: string) {
+    const res = await fetch(`/api/orders/${orderId}`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    });
+    if (res.ok) setOrder(await res.json());
     setLoading(false);
   }
 
-  useEffect(() => { fetchOrder(); }, [orderId]);
-
-  function copyKey() {
-    if (!order?.assignedKey?.keyValue) return;
-    navigator.clipboard.writeText(order.assignedKey.keyValue);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
+  useEffect(() => {
+    const tok = localStorage.getItem("auth_token");
+    if (!tok) { router.push(`/${locale}/login`); return; }
+    setToken(tok);
+    fetchOrder(tok);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId, locale, router]);
 
   if (loading) {
     return (
@@ -90,15 +72,18 @@ export default function OrderDetailPage() {
     );
   }
 
-  const isBuyer = currentUserId === order.buyer.id;
-  const isSeller = currentUserId === order.seller.id;
+  const isPending = order.status === "PENDING";
+  const isInstant = order.product.deliveryType === "INSTANT";
+  const showKey = isInstant && (order.status === "PAID" || order.status === "COMPLETED");
+  const showTimeline = !isInstant;
+  const showConfirm = order.status === "DELIVERED" && !isInstant;
+  const productName = getLocalizedText(order.product.title as Record<string, string> | string, locale);
 
   return (
     <div className="flex min-h-screen flex-col bg-background bg-grid">
       <Nav locale={locale} />
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
-        {/* Back */}
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
         <Link
           href={`/${locale}/orders`}
           className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -106,155 +91,66 @@ export default function OrderDetailPage() {
           <ArrowLeft className="h-4 w-4" /> Back to Orders
         </Link>
 
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Order #{order.id.slice(0, 8)}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Placed on {new Date(order.createdAt).toLocaleDateString()}
-            </p>
+        {isPending ? (
+          <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/8 bg-card/60 p-12 text-center backdrop-blur-sm">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-lg font-semibold text-foreground">Verifying payment…</p>
+            <p className="text-sm text-muted-foreground">This may take a few seconds. Do not close this page.</p>
           </div>
-          <span className="text-2xl font-bold text-foreground">${order.amount.toFixed(2)}</span>
-        </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Success header */}
+            <div className="flex flex-col items-center gap-3 text-center">
+              <CheckCircle2 className="h-12 w-12 text-emerald-400" />
+              <h1 className="text-2xl font-bold text-foreground">Payment Successful</h1>
+              <p className="text-sm text-muted-foreground">Your order has been confirmed.</p>
+            </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
-            {/* Escrow Timeline */}
-            <EscrowTimeline status={order.status} createdAt={order.createdAt} escrowReleasedAt={order.escrowReleasedAt} />
-
-            {/* Product Info */}
-            <div className="rounded-2xl border border-white/8 bg-card/60 p-6 backdrop-blur-sm">
-              <h2 className="mb-4 font-semibold text-foreground">Product</h2>
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-secondary/50">
-                  {order.product.images[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={order.product.images[0]} alt="" className="h-full w-full rounded-xl object-cover" />
-                  ) : (
-                    <Package className="h-7 w-7 text-muted-foreground" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">{order.product.title}</p>
-                  <p className="text-sm text-muted-foreground">{order.product.type.replace("_", " ")}</p>
-                </div>
-                <Link
-                  href={`/${locale}/products/${order.product.id}`}
-                  className="ml-auto text-primary hover:text-primary/80 transition-colors"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
+            {/* Status + metadata */}
+            <div className="rounded-2xl border border-white/8 bg-card/60 p-5 backdrop-blur-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">{productName}</span>
+                <OrderStatusBadge status={order.status} />
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <span className="text-muted-foreground">Order ID</span>
+                <span className="font-mono text-xs text-foreground">{order.id.slice(0, 12)}…</span>
+                <span className="text-muted-foreground">Date</span>
+                <span className="text-foreground">
+                  {new Date(order.createdAt).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
+                </span>
               </div>
             </div>
 
-            {/* Product Key — shown after delivery */}
-            {order.assignedKey && (
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
-                <h2 className="mb-3 font-semibold text-emerald-400">Activation Key</h2>
-                <div className="flex items-center gap-3 rounded-lg bg-background/50 px-4 py-3">
-                  <code className="flex-1 font-mono text-sm text-foreground break-all">
-                    {order.assignedKey.keyValue}
-                  </code>
-                  <button
-                    onClick={copyKey}
-                    className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
+            {/* Key reveal for INSTANT */}
+            {showKey && token && (
+              <KeyRevealBox orderId={orderId} token={token} />
             )}
 
-            {/* Dispute info */}
-            {order.dispute && (
-              <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
-                <h2 className="mb-2 font-semibold text-red-400">
-                  Dispute — {order.dispute.status}
-                </h2>
-                <p className="text-sm text-muted-foreground">{order.dispute.reason}</p>
-                {order.dispute.resolution && (
-                  <div className="mt-3 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">
-                    <strong>Resolution:</strong> {order.dispute.resolution}
+            {/* Delivery timeline for MANUAL */}
+            {showTimeline && (
+              <div className="rounded-2xl border border-white/8 bg-card/60 p-6 backdrop-blur-sm">
+                <h2 className="mb-4 text-sm font-semibold text-foreground">Delivery Status</h2>
+                <DeliveryTimeline
+                  status={order.status}
+                  deliveredAt={order.deliveredAt}
+                  confirmedAt={order.confirmedAt}
+                  credentials={order.credentials}
+                />
+                {showConfirm && token && (
+                  <div className="mt-6">
+                    <ConfirmReceiptDialog
+                      orderId={orderId}
+                      token={token}
+                      onConfirmed={() => token && fetchOrder(token)}
+                      confirmDeadline={order.confirmDeadline}
+                    />
                   </div>
                 )}
               </div>
             )}
-
-            {/* Review */}
-            {order.review && (
-              <div className="rounded-2xl border border-white/8 bg-card/60 p-6 backdrop-blur-sm">
-                <h2 className="mb-3 font-semibold text-foreground">Review Left</h2>
-                <div className="flex items-center gap-2 mb-2">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i} className={`text-lg ${i < order.review!.rating ? "text-amber-400" : "text-muted-foreground/30"}`}>★</span>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground">{order.review.comment}</p>
-              </div>
-            )}
-
-            {/* Chat */}
-            <div className="rounded-2xl border border-white/8 bg-card/60 backdrop-blur-sm overflow-hidden">
-              <div className="border-b border-border/60 px-6 py-4">
-                <h2 className="font-semibold text-foreground">Messages</h2>
-              </div>
-              {order && authToken && (
-                <ChatWindow
-                  orderId={orderId}
-                  currentUserId={currentUserId ?? ""}
-                  receiverId={currentUserId === order.buyer.id ? order.seller.id : order.buyer.id}
-                  token={authToken}
-                />
-              )}
-            </div>
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-4">
-            {/* Actions */}
-            {authToken && (
-              <OrderActions
-                orderId={order.id}
-                status={order.status}
-                userRole={isBuyer ? "buyer" : "seller"}
-                token={authToken}
-              />
-            )}
-
-            {/* Order Summary */}
-            <div className="rounded-2xl border border-white/8 bg-card/60 p-5 backdrop-blur-sm">
-              <h2 className="mb-4 font-semibold text-foreground">Summary</h2>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Product</span>
-                  <span className="text-foreground">${order.amount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Commission</span>
-                  <span className="text-foreground">${order.commission.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-t border-border/60 pt-2 font-semibold">
-                  <span className="text-foreground">Total</span>
-                  <span className="text-foreground">${order.amount.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Parties */}
-            <div className="rounded-2xl border border-white/8 bg-card/60 p-5 backdrop-blur-sm">
-              <h2 className="mb-4 font-semibold text-foreground">Parties</h2>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground">Buyer</p>
-                  <p className="font-medium text-foreground">{order.buyer.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Seller</p>
-                  <p className="font-medium text-foreground">{order.seller.name}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </main>
 
       <Footer locale={locale} />

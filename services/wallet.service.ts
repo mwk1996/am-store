@@ -13,8 +13,16 @@ export const walletService = {
       WHERE id = ${userId}
         AND "walletBalance" >= ${amount}
     `;
-    if (result === 0n || result === 0) {
+    if (Number(result) === 0) {
       throw new Error("Insufficient balance");
     }
+  },
+
+  async getBalance(_userId: string) {
+    return { balance: 0 };
+  },
+
+  async getTransactions(_userId: string, page = 1, limit = 20) {
+    return { items: [], total: 0, page, limit };
   },
 };

@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ShieldCheck, Lock, Zap, Key, ArrowRight } from "lucide-react";
+import { ShieldCheck, Lock, Zap, Key, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getLocalizedText, formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { GatewaySelector } from "@/components/purchase/GatewaySelector";
 
 interface Product {
   id: string;
@@ -31,11 +31,19 @@ export default function CheckoutPage({ params: { locale } }: CheckoutPageProps) 
   const searchParams = useSearchParams();
   const preselectedProductId = searchParams.get("productId") ?? "";
 
+  const [token, setToken] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedProductId, setSelectedProductId] = useState(preselectedProductId);
-  const [email, setEmail] = useState("");
+  const [selectedGateway, setSelectedGateway] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const tok = localStorage.getItem("auth_token");
+    if (!tok) { router.push(`/${locale}/login`); return; }
+    setToken(tok);
+  }, [locale, router]);
 
   useEffect(() => {
     fetch("/api/orders/products")
@@ -58,49 +66,64 @@ export default function CheckoutPage({ params: { locale } }: CheckoutPageProps) 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedProductId || !email) return;
+    if (!selectedProductId || !selectedGateway || !token) return;
 
     setLoading(true);
+    setError(null);
     try {
+      // Step 1: Create order
       const orderRes = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, productId: selectedProductId, locale }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ productId: selectedProductId, locale, gateway: selectedGateway }),
       });
 
       if (!orderRes.ok) {
         const err = await orderRes.json();
-        throw new Error(err.error ?? "Failed to create order");
+        if (orderRes.status === 402) {
+          setError("Insufficient wallet balance.");
+        } else {
+          setError(err.error ?? "Could not create order.");
+        }
+        return;
       }
 
       const { orderId } = await orderRes.json();
 
-      const payRes = await fetch("/api/payment/initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      });
-
-      if (!payRes.ok) {
-        const err = await payRes.json();
-        throw new Error(err.error ?? "Failed to initiate payment");
+      // Wallet path — order already PAID, go directly to order detail
+      if (selectedGateway === "wallet") {
+        router.push(`/${locale}/orders/${orderId}`);
+        return;
       }
 
-      const { redirectUrl } = await payRes.json();
-      router.push(redirectUrl);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Something went wrong.",
-        variant: "destructive",
+      // Step 2: Initiate gateway payment
+      const initiateRes = await fetch("/api/payment/initiate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ orderId, gateway: selectedGateway }),
       });
+
+      if (!initiateRes.ok) {
+        setError("Payment could not be started. Please try again.");
+        return;
+      }
+
+      const { redirectUrl } = await initiateRes.json();
+
+      if (!redirectUrl) {
+        router.push(`/${locale}/orders/${orderId}`);
+      } else {
+        window.location.href = redirectUrl;
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
     }
   }
 
   return (
     <div className="min-h-screen bg-background bg-grid">
-      {/* Ambient glow */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-primary/5 blur-3xl" />
       </div>
@@ -114,7 +137,6 @@ export default function CheckoutPage({ params: { locale } }: CheckoutPageProps) 
           </div>
           <h1 className="text-3xl font-bold">{t("title")}</h1>
 
-          {/* 3-step progress indicator */}
           <div className="mt-6 flex items-center justify-center gap-2 text-xs">
             <div className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-semibold text-primary">
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">1</span>
@@ -140,21 +162,6 @@ export default function CheckoutPage({ params: { locale } }: CheckoutPageProps) 
               <h2 className="mb-5 text-base font-semibold">{t("contactInfo")}</h2>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium">{t("email")}</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder={t("emailPlaceholder")}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                    className="border-border/60 bg-secondary/50 focus:border-primary/60 focus-visible:ring-primary/40"
-                  />
-                  <p className="text-xs text-muted-foreground">{t("emailHint")}</p>
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="product" className="text-sm font-medium">{t("product")}</Label>
                   {productsLoading ? (
                     <div className="h-10 rounded-lg shimmer" />
@@ -174,13 +181,31 @@ export default function CheckoutPage({ params: { locale } }: CheckoutPageProps) 
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Payment Method</Label>
+                  <GatewaySelector value={selectedGateway} onChange={setSelectedGateway} disabled={loading} />
+                </div>
+
+                {error && (
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span className="flex-1">{error}</span>
+                    <Button variant="ghost" size="sm" onClick={() => setError(null)} className="h-auto p-0 text-destructive hover:text-destructive/80">
+                      Try again
+                    </Button>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={loading || !selectedProductId || !email}
+                  disabled={loading || !selectedProductId || !selectedGateway}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3.5 text-sm font-bold text-accent-foreground transition-all duration-200 hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/25 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  <Zap className="h-4 w-4" />
-                  {loading ? t("paying") : t("pay")}
+                  {loading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
+                  ) : (
+                    <><Zap className="h-4 w-4" /> Pay {selectedProduct ? `${formatPrice(selectedProduct.price, locale)} ${tStore("currency")}` : ""}</>
+                  )}
                 </button>
 
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -196,7 +221,6 @@ export default function CheckoutPage({ params: { locale } }: CheckoutPageProps) 
             <div className="rounded-xl border border-white/8 bg-card/80 p-6 backdrop-blur-sm">
               <h2 className="mb-4 text-base font-semibold">{t("orderSummary")}</h2>
               <div className="space-y-4">
-                {/* Product image placeholder with shimmer */}
                 {!selectedProduct && productsLoading && (
                   <div className="h-20 w-full rounded-lg shimmer" />
                 )}
@@ -237,7 +261,6 @@ export default function CheckoutPage({ params: { locale } }: CheckoutPageProps) 
               </div>
             </div>
 
-            {/* What happens next */}
             <div className="rounded-xl border border-white/8 bg-card/60 p-5 backdrop-blur-sm">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">What happens next?</p>
               <ol className="space-y-3">

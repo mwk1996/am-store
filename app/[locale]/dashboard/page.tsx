@@ -6,11 +6,12 @@ import Link from "next/link";
 import {
   ShoppingBag, TrendingUp, Wallet, Star, Package,
   Plus, ChevronRight, Clock, CheckCircle, AlertTriangle,
-  Info, X, Pencil, ToggleLeft, List,
+  Info, X, Pencil, ToggleLeft, List, Send,
 } from "lucide-react";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { getLocalizedText } from "@/lib/utils";
+import { getLocalizedText, cn } from "@/lib/utils";
+import { DeliverCredentialsModal } from "@/components/dashboard/deliver-credentials-modal";
 
 interface DashboardStats {
   totalOrders: number;
@@ -29,6 +30,16 @@ interface RecentOrder {
   status: string;
   amount: number;
   product: { title: string; type: string };
+}
+
+interface SellerOrder {
+  id: string;
+  status: string;
+  createdAt: string;
+  deliveredAt: string | null;
+  confirmDeadline: string | null;
+  product: { id: string; title: unknown; deliveryType: "INSTANT" | "MANUAL" };
+  buyer?: { email: string } | null;
 }
 
 interface Listing {
@@ -71,6 +82,12 @@ export default function DashboardPage() {
   const [bannerDismissed, setBannerDismissed] = useState(true);
   const [token, setToken] = useState<string>("");
 
+  // Seller orders tab state
+  const [sellerOrders, setSellerOrders] = useState<SellerOrder[]>([]);
+  const [sellerOrdersLoading, setSellerOrdersLoading] = useState(false);
+  const [deliverModalOrderId, setDeliverModalOrderId] = useState<string | null>(null);
+  const [deliverModalProductName, setDeliverModalProductName] = useState<string>("");
+
   const fetchListings = async (tok: string) => {
     const res = await fetch(`/api/products?sellerId=me&limit=100`, {
       headers: { Authorization: `Bearer ${tok}` },
@@ -105,6 +122,11 @@ export default function DashboardPage() {
           if (me.role === "SELLER") {
             await fetchListings(tok);
             setBannerDismissed(localStorage.getItem("sec04_banner_dismissed") === "true");
+            setSellerOrdersLoading(true);
+            fetch("/api/orders?role=seller&limit=100", { headers: { Authorization: `Bearer ${tok}` } })
+              .then(r => r.json())
+              .then(data => { setSellerOrders(data.items ?? []); })
+              .finally(() => setSellerOrdersLoading(false));
           }
         }
       })
@@ -212,7 +234,17 @@ export default function DashboardPage() {
                       {activeCount}/10
                     </span>
                   </span>
-                ) : tab === "overview" ? "Overview" : "Orders"}
+                ) : tab === "overview" ? "Overview" : (
+                <span className="flex items-center gap-1">
+                  Orders
+                  {(() => {
+                    const count = sellerOrders.filter(o => o.status === "PAID" && o.product.deliveryType === "MANUAL").length;
+                    return count > 0 ? (
+                      <span className="ms-1 rounded-full bg-amber-500/20 text-amber-400 text-xs px-1.5 py-0.5">{count}</span>
+                    ) : null;
+                  })()}
+                </span>
+              )}
               </button>
             ))}
           </div>
@@ -387,42 +419,106 @@ export default function DashboardPage() {
 
         {/* Orders Tab */}
         {role === "SELLER" && activeTab === "orders" && (
-          <div className="rounded-2xl border border-white/8 bg-card/60 backdrop-blur-sm">
-            <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
-              <h2 className="font-semibold text-foreground">All Orders</h2>
-              <Link
-                href={`/${locale}/orders`}
-                className="flex items-center gap-1 text-xs text-primary hover:underline"
-              >
-                View full list <ChevronRight className="h-3 w-3" />
-              </Link>
-            </div>
-            <div className="divide-y divide-border/40">
-              {orders.length === 0 ? (
+          <div>
+            <div className="rounded-2xl border border-white/8 bg-card/60 backdrop-blur-sm overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
+                <h2 className="font-semibold text-foreground">Seller Orders</h2>
+              </div>
+              {sellerOrdersLoading ? (
+                <div className="px-6 py-12 text-center text-sm text-muted-foreground">Loading...</div>
+              ) : sellerOrders.length === 0 ? (
                 <div className="px-6 py-12 text-center text-sm text-muted-foreground">No orders yet</div>
               ) : (
-                orders.map((order) => (
-                  <Link
-                    key={order.id}
-                    href={`/${locale}/orders/${order.id}`}
-                    className="flex items-center justify-between px-6 py-4 hover:bg-secondary/20 transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">{order.product.title}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="ml-4 flex items-center gap-3">
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[order.status] ?? ""}`}>
-                        {order.status}
-                      </span>
-                      <span className="text-sm font-semibold text-foreground">${order.amount.toFixed(2)}</span>
-                    </div>
-                  </Link>
-                ))
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/60 text-xs text-muted-foreground uppercase tracking-wider">
+                        <th className="pb-3 pt-4 px-4 text-start font-medium">Buyer</th>
+                        <th className="pb-3 pt-4 px-4 text-start font-medium">Product</th>
+                        <th className="pb-3 pt-4 px-4 text-start font-medium">Type</th>
+                        <th className="pb-3 pt-4 px-4 text-start font-medium">Status</th>
+                        <th className="pb-3 pt-4 px-4 text-start font-medium">Date</th>
+                        <th className="pb-3 pt-4 px-4 text-start font-medium">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {sellerOrders.map((order) => {
+                        const isPaidManual = order.status === "PAID" && order.product.deliveryType === "MANUAL";
+                        const hoursLeft = order.confirmDeadline
+                          ? Math.ceil((new Date(order.confirmDeadline).getTime() - Date.now()) / 3600000)
+                          : null;
+                        const urgent = hoursLeft !== null && hoursLeft <= 4;
+                        return (
+                          <tr
+                            key={order.id}
+                            className={cn(
+                              "hover:bg-secondary/10 transition-colors",
+                              isPaidManual && "border-s-2 border-amber-400/60 bg-amber-500/5"
+                            )}
+                          >
+                            <td className="px-4 py-3 text-xs text-muted-foreground truncate max-w-[120px]">
+                              {order.buyer?.email ?? "—"}
+                            </td>
+                            <td className="px-4 py-3 font-medium text-foreground truncate max-w-[160px]">
+                              {getLocalizedText(order.product.title as Record<string, string> | string, locale)}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">
+                              {order.product.deliveryType}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[order.status] ?? ""}`}>
+                                {order.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-3">
+                              {isPaidManual && (
+                                <button
+                                  onClick={() => {
+                                    setDeliverModalOrderId(order.id);
+                                    setDeliverModalProductName(
+                                      getLocalizedText(order.product.title as Record<string, string> | string, locale)
+                                    );
+                                  }}
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+                                >
+                                  <Send className="h-3.5 w-3.5" />
+                                  Deliver
+                                </button>
+                              )}
+                              {order.status === "DELIVERED" && hoursLeft !== null && (
+                                <span className={cn("flex items-center gap-1 text-xs", urgent ? "text-amber-400" : "text-muted-foreground")}>
+                                  <Clock className="h-3 w-3" />
+                                  Auto-confirms in {hoursLeft}h
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
+
+            {deliverModalOrderId && (
+              <DeliverCredentialsModal
+                orderId={deliverModalOrderId}
+                productName={deliverModalProductName}
+                token={token}
+                open={!!deliverModalOrderId}
+                onOpenChange={(open) => { if (!open) setDeliverModalOrderId(null); }}
+                onDelivered={() => {
+                  setDeliverModalOrderId(null);
+                  fetch("/api/orders?role=seller&limit=100", { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => r.json())
+                    .then(data => setSellerOrders(data.items ?? []));
+                }}
+              />
+            )}
           </div>
         )}
       </main>
