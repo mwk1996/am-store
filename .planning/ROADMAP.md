@@ -80,7 +80,7 @@ Plans:
 Plans:
 - [ ] 03-01-PLAN.md — Schema migration: Order extension + AuditLog + AuditEvent enum + FAILED status (Wave 1)
 - [ ] 03-02-PLAN.md — Test scaffold: vitest config + 6 failing test files for all Phase 3 behaviors (Wave 1)
-- [ ] 03-03-PLAN.md — [BLOCKING] Prisma migrate dev + generate (Wave 2)
+- [x] 03-03-PLAN.md — [BLOCKING] Prisma migrate dev + generate (Wave 2)
 - [ ] 03-04-PLAN.md — Services: fix key race condition + implement order service stubs + audit service (Wave 3)
 - [ ] 03-05-PLAN.md — Payment gateway abstraction: types + dispatcher + ZainCash provider + 4 stubs (Wave 3)
 - [ ] 03-06-PLAN.md — Order API routes: create/list + key reveal + deliver + confirm (Wave 4)
@@ -155,7 +155,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Auth & User Accounts | 5/5 | Complete | 2026-05-02 |
 | 2. Marketplace Browsing & Listings | 0/7 | Not started | - |
-| 3. Purchase & Delivery | 0/10 | Not started | - |
+| 3. Purchase & Delivery | 1/10 | In progress | - |
 | 4. Wallet & Payments | 0/? | Not started | - |
 | 5. Trust Layer | 0/? | Not started | - |
 | 6. Chat & Notifications | 0/? | Not started | - |
