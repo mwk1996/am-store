@@ -1,26 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { verifyToken, jsonError } from "@/lib/auth-middleware";
+import { orderService } from "@/services/order.service";
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const order = await prisma.order.findUnique({
-      where: { id: params.id },
-      include: {
-        product: { select: { title: true, description: true } },
-        productKey: { select: { id: true } },
-      },
-    });
+export const dynamic = "force-dynamic";
 
-    if (!order) {
-      return NextResponse.json({ error: "Order not found." }, { status: 404 });
-    }
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const user = verifyToken(req);
+  if (!user) return jsonError("Unauthorized", 401);
 
-    return NextResponse.json(order);
-  } catch (err) {
-    console.error(`GET /api/orders/${params.id} error:`, err);
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
-  }
+  const order = await orderService.getByIdForUser(params.id, user.userId);
+  if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
+
+  return NextResponse.json(order);
 }
