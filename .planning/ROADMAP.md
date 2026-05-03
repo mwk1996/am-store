@@ -76,7 +76,17 @@ Plans:
   4. A buyer can confirm manual delivery receipt, releasing earnings to the seller
   5. If a buyer does not confirm within 24 hours, the order auto-confirms and the seller's balance is released
   6. A buyer can view their full order history and re-access previously purchased keys
-**Plans**: TBD
+**Plans**: 9 plans
+Plans:
+- [ ] 03-01-PLAN.md — Schema migration: Order extension + AuditLog + AuditEvent enum + FAILED status (Wave 1)
+- [ ] 03-02-PLAN.md — Test scaffold: vitest config + 6 failing test files for all Phase 3 behaviors (Wave 1)
+- [ ] 03-03-PLAN.md — [BLOCKING] Prisma migrate dev + generate (Wave 2)
+- [ ] 03-04-PLAN.md — Services: fix key race condition + implement order service stubs + audit service (Wave 3)
+- [ ] 03-05-PLAN.md — Payment gateway abstraction: types + dispatcher + ZainCash provider + 4 stubs (Wave 3)
+- [ ] 03-06-PLAN.md — Order API routes: create/list + key reveal + deliver + confirm (Wave 4)
+- [ ] 03-07-PLAN.md — Payment routes: initiate + callback + cron auto-confirm + vercel.json (Wave 4)
+- [ ] 03-08-PLAN.md — Buyer UI: checkout with gateway selector + order history + order detail + shared components (Wave 5)
+- [ ] 03-09-PLAN.md — Seller UI: dashboard Orders tab + DeliverCredentialsModal (Wave 5)
 **UI hint**: yes
 
 ---
@@ -144,7 +154,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Auth & User Accounts | 5/5 | Complete | 2026-05-02 |
 | 2. Marketplace Browsing & Listings | 0/7 | Not started | - |
-| 3. Purchase & Delivery | 0/? | Not started | - |
+| 3. Purchase & Delivery | 0/9 | Not started | - |
 | 4. Wallet & Payments | 0/? | Not started | - |
 | 5. Trust Layer | 0/? | Not started | - |
 | 6. Chat & Notifications | 0/? | Not started | - |
