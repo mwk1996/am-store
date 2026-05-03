@@ -8,29 +8,25 @@ export const keyService = {
    * Must be called inside a Prisma transaction or standalone.
    */
   async assignKey(tx: Prisma.TransactionClient, productId: string, orderId: string) {
-    // Find first available key with a lock-safe approach using skipLocked via raw query
-    const keys = await tx.productKey.findMany({
-      where: { productId, isUsed: false, orderId: null },
-      take: 1,
-      orderBy: { createdAt: "asc" },
-    });
+    const keys = await tx.$queryRaw<Array<{ id: string; keyValue: string }>>`
+      SELECT id, "keyValue"
+      FROM "ProductKey"
+      WHERE "productId" = ${productId}
+        AND "isUsed" = false
+        AND "orderId" IS NULL
+      ORDER BY "createdAt" ASC
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED
+    `;
 
     if (keys.length === 0) {
       throw new Error("No available keys for this product");
     }
 
-    const key = keys[0];
-
-    const updated = await tx.productKey.update({
-      where: { id: key.id },
-      data: {
-        isUsed: true,
-        usedAt: new Date(),
-        orderId,
-      },
+    return tx.productKey.update({
+      where: { id: keys[0].id },
+      data: { isUsed: true, usedAt: new Date(), orderId },
     });
-
-    return updated;
   },
 
   async countAvailable(productId: string) {

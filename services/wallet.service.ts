@@ -1,18 +1,20 @@
-// Wallet service — wallet model implemented in Phase 4
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+
 export const walletService = {
-  async getOrCreate(_userId: string) {
-    return { balance: 0, pendingBalance: 0 };
-  },
-  async getBalance(_userId: string) {
-    return { balance: 0, pendingBalance: 0 };
-  },
-  async getTransactions(_userId: string, _page?: number, _limit?: number) {
-    return [];
-  },
-  async credit(_userId: string, _amount: number, _note?: string) {
-    throw new Error("Wallet not implemented until Phase 4");
-  },
-  async debit(_userId: string, _amount: number, _note?: string) {
-    throw new Error("Wallet not implemented until Phase 4");
+  async deductBalance(
+    userId: string,
+    amount: Prisma.Decimal,
+    tx: Prisma.TransactionClient | typeof prisma = prisma
+  ): Promise<void> {
+    const result = await tx.$executeRaw`
+      UPDATE "User"
+      SET "walletBalance" = "walletBalance" - ${amount}
+      WHERE id = ${userId}
+        AND "walletBalance" >= ${amount}
+    `;
+    if (result === 0n || result === 0) {
+      throw new Error("Insufficient balance");
+    }
   },
 };
