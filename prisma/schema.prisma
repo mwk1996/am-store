@@ -19,6 +19,7 @@ enum OrderStatus {
   COMPLETED
   DISPUTED
   REFUNDED
+  FAILED
 }
 
 enum DeliveryType {
@@ -84,17 +85,53 @@ model ProductKey {
 }
 
 model Order {
-  id           String      @id @default(cuid())
-  guestEmail   String
-  productId    String
-  product      Product     @relation(fields: [productId], references: [id])
-  productKeyId String?     @unique
-  productKey   ProductKey?
-  status       OrderStatus @default(PENDING)
-  gatewayRef   String?
-  locale       String      @default("en")
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id               String      @id @default(cuid())
+  guestEmail       String?
+  buyerId          String?
+  buyer            User?       @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId         String?
+  seller           User?       @relation("SellerOrders", fields: [sellerId], references: [id])
+  productId        String
+  product          Product     @relation(fields: [productId], references: [id])
+  productKeyId     String?     @unique
+  productKey       ProductKey?
+  status           OrderStatus @default(PENDING)
+  gatewayRef       String?
+  locale           String      @default("en")
+  sellerAmount     Decimal     @default(0) @db.Decimal(10, 2)
+  commissionAmount Decimal     @default(0) @db.Decimal(10, 2)
+  credentials      String?
+  disputeDeadline  DateTime?
+  confirmDeadline  DateTime?
+  deliveredAt      DateTime?
+  confirmedAt      DateTime?
+  auditLogs        AuditLog[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+enum AuditEvent {
+  KEY_REVEALED
+  CREDENTIALS_DELIVERED
+  BUYER_CONFIRMED
+  AUTO_CONFIRMED
+}
+
+model AuditLog {
+  id        String     @id @default(cuid())
+  orderId   String
+  order     Order      @relation(fields: [orderId], references: [id])
+  event     AuditEvent
+  ip        String
+  userAgent String
+  createdAt DateTime   @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
 }
 
 model AdminUser {
@@ -120,6 +157,8 @@ model User {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   sellerProducts       Product[] @relation("SellerProducts")
+  buyerOrders          Order[]   @relation("BuyerOrders")
+  sellerOrders         Order[]   @relation("SellerOrders")
 
   @@index([shopName])
   @@index([verificationToken])
