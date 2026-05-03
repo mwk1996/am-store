@@ -27,13 +27,11 @@ export default async function LocaleLayout({ children, params: { locale } }: Loc
   const dir = isRtl(locale) ? "rtl" : "ltr";
 
   return (
-    <html lang={locale} dir={dir} suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans antialiased">
-        <NextIntlClientProvider messages={messages} locale={locale}>
-          {children}
-          <Toaster />
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <div lang={locale} dir={dir} className="min-h-screen bg-background font-sans antialiased">
+      <NextIntlClientProvider messages={messages} locale={locale}>
+        {children}
+        <Toaster />
+      </NextIntlClientProvider>
+    </div>
   );
 }
